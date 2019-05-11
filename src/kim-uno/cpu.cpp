@@ -5,48 +5,51 @@
    http://obsolescenceguaranteed.blogspot.ch/
    Tidied up by Mark VandeWettering to make it compile with platformio.
 */
+#include "boardhardware.h";
 
 #include <stdio.h>
 #include <stdint.h>
 
 #include <avr/pgmspace.h>
+
+#ifdef USE_EPROM
 extern uint8_t eepromread(uint16_t eepromaddress);
 extern void eepromwrite(uint16_t eepromaddress, uint8_t bytevalue);
+#endif
 
 //#define WREG_OFFSET 0x03DF
 #define WREG_OFFSET 0x0360
 
-extern char threeHex[3][2]; 	// buffer for 3 hex digits
-extern int blitzMode;		// status variable only for microchess
+extern char threeHex[3][2]; // buffer for 3 hex digits
+extern int blitzMode;       // status variable only for microchess
 
 extern void printhex(uint16_t val);
 extern void serout(uint8_t value);
 extern void serouthex(uint8_t val);
-extern uint8_t getAkey(void);	// for serial port get normal ASCII keys
-extern uint8_t getKIMkey();	// for emulation of KIM keypad
+extern uint8_t getAkey(void); // for serial port get normal ASCII keys
+extern uint8_t getKIMkey();   // for emulation of KIM keypad
 extern void clearkey(void);
 extern void driveLEDs();
 extern void scanKeys();
 
 void nmi6502(void);
 
-uint8_t useKeyboardLed = 0x01; 	// set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
-uint8_t iii;  			// counter for various purposes, declared here to avoid in-function delay in 6502 functions.
-uint8_t nmiFlag = 0; 		// added by OV to aid single-stepping SST mode on KIM-I
-uint8_t SSTmode = 0; 		// SST switch in KIM-I: 1 = on.
+uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
+uint8_t iii;                   // counter for various purposes, declared here to avoid in-function delay in 6502 functions.
+uint8_t nmiFlag = 0;           // added by OV to aid single-stepping SST mode on KIM-I
+uint8_t SSTmode = 0;           // SST switch in KIM-I: 1 = on.
 
-
-#define FLAG_CARRY     0x01
-#define FLAG_ZERO      0x02
+#define FLAG_CARRY 0x01
+#define FLAG_ZERO 0x02
 #define FLAG_INTERRUPT 0x04
-#define FLAG_DECIMAL   0x08
-#define FLAG_BREAK     0x10
-#define FLAG_CONSTANT  0x20
-#define FLAG_OVERFLOW  0x40
-#define FLAG_SIGN      0x80
-#define BASE_STACK     0x100
+#define FLAG_DECIMAL 0x08
+#define FLAG_BREAK 0x10
+#define FLAG_CONSTANT 0x20
+#define FLAG_OVERFLOW 0x40
+#define FLAG_SIGN 0x80
+#define BASE_STACK 0x100
 
-#define saveaccum(n) a = (uint8_t)((n) & 0x00FF)
+#define saveaccum(n) a = (uint8_t)((n)&0x00FF)
 
 //flag modifier macros
 #define setcarry() cpustatus |= FLAG_CARRY
@@ -63,11 +66,34 @@ uint8_t SSTmode = 0; 		// SST switch in KIM-I: 1 = on.
 #define clearsign() cpustatus &= (~FLAG_SIGN)
 
 //flag calculation macros
-#define zerocalc(n) { if ((n) & 0x00FF) clearzero(); else setzero(); }
-#define signcalc(n) { if ((n) & 0x0080) setsign(); else clearsign(); }
-#define carrycalc(n) { if ((n) & 0xFF00) setcarry(); else clearcarry(); }
-#define overflowcalc(n, m, o) { if (((n) ^ (uint16_t)(m)) & ((n) ^ (o)) & 0x0080) setoverflow(); else clearoverflow(); }
-
+#define zerocalc(n)      \
+    {                    \
+        if ((n)&0x00FF)  \
+            clearzero(); \
+        else             \
+            setzero();   \
+    }
+#define signcalc(n)      \
+    {                    \
+        if ((n)&0x0080)  \
+            setsign();   \
+        else             \
+            clearsign(); \
+    }
+#define carrycalc(n)      \
+    {                     \
+        if ((n)&0xFF00)   \
+            setcarry();   \
+        else              \
+            clearcarry(); \
+    }
+#define overflowcalc(n, m, o)                             \
+    {                                                     \
+        if (((n) ^ (uint16_t)(m)) & ((n) ^ (o)) & 0x0080) \
+            setoverflow();                                \
+        else                                              \
+            clearoverflow();                              \
+    }
 
 //6502 CPU registers
 uint16_t pc;
@@ -91,12 +117,12 @@ extern uint8_t showflt(uint8_t reg);
 extern uint8_t enteroperation(void);
 
 // --- OVERVIEW OF KIM-1 MEMORY MAP -------------------------------------------------
-uint8_t RAM[1024]; 	// main 1KB RAM	     0x0000-0x04FF
+uint8_t RAM[1024]; // main 1KB RAM	     0x0000-0x04FF
 // empty            					    0x0900-0x13FF
 // I/O and timer of 6530-003, free for user  0x1700-0x173F, not used in KIM ROM
 // I/O and timer of 6530-002, used by KIM    0x1740-0x177F, used by LED/Keyboard
-uint8_t RAM003[64];    // RAM from 6530-003  0x1780-0x17BF, free for user applications
-uint8_t RAM002[64];    // RAM from 6530-002  0x17C0-0x17FF, free for user except 0x17E7-0x17FF
+uint8_t RAM003[64]; // RAM from 6530-003  0x1780-0x17BF, free for user applications
+uint8_t RAM002[64]; // RAM from 6530-002  0x17C0-0x17FF, free for user except 0x17E7-0x17FF
 // rom003 is                                 0x1800-0x1BFF
 // rom002 is                                 0x1C00-0x1FFF
 
@@ -106,7 +132,6 @@ uint8_t RAM002[64];    // RAM from 6530-002  0x17C0-0x17FF, free for user except
 //               FFFC, FFFD - RST Vector
 //               FFFE, FFFF - IRQ Vector
 // Application roms (mchess, calc) are above standard 8K of KIM-1
-
 
 // --- CRBond calculator RAM workspace: --------------------------------------------
 // - NOTE THAT UPPER 128 BYTES OF KIM RAM IS USED BY CALCULATOR AS WORKSPACE!
@@ -118,11 +143,12 @@ uint8_t getRegister(uint8_t reg, char *inVal)
 {
     uint16_t offset;
 
-    offset =  WREG_OFFSET + reg * 8; // place in RAM for W1/2/3/4 registers
+    offset = WREG_OFFSET + reg * 8; // place in RAM for W1/2/3/4 registers
 
     //  print in most compact form
     // 2. do we print a leading '-' cos mantissa negative?
-    if ((RAM[0 + offset] & (uint8_t)128) == 0) { // mantissa positive, skip the + to save a digit
+    if ((RAM[0 + offset] & (uint8_t)128) == 0)
+    { // mantissa positive, skip the + to save a digit
         sprintf(inVal, "%c%c%c%c%c%c%c",
                 // mantissa sign
                 //(RAM[0+offset]&(uint8_t)128)==0?'+':'-',
@@ -132,12 +158,14 @@ uint8_t getRegister(uint8_t reg, char *inVal)
                 // exponent sign
                 (RAM[0 + offset] & (uint8_t)64) == 0 ? (uint8_t)62 : (uint8_t)64, // E, or G is printed as -
                 // exponent
-                /*!!!*/		//(RAM[0+offset]&0x0F) + (uint8_t)48,
-                ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                (RAM[1 + offset] & 0x0F) + (uint8_t)48 );
+                /*!!!*/ //(RAM[0+offset]&0x0F) + (uint8_t)48,
+                    ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
+                (RAM[1 + offset] & 0x0F) + (uint8_t)48);
         return 0; // light dec point on first digit
-    } else { // mantissa negative, add a minus
-        sprintf(inVal, "%c%c%c%c%c%c%c",  //G printed as -
+    }
+    else
+    {                                    // mantissa negative, add a minus
+        sprintf(inVal, "%c%c%c%c%c%c%c", //G printed as -
                 // mantissa sign
                 64, // G printed as -
                 // mantissa
@@ -148,12 +176,11 @@ uint8_t getRegister(uint8_t reg, char *inVal)
                 (RAM[0 + offset] & (uint8_t)64) == 0 ? (uint8_t)62 : (uint8_t)64, //E or G printed as -
                 // exponent
                 ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                (RAM[1 + offset] & 0x0F) + (uint8_t)48 );
+                (RAM[1 + offset] & 0x0F) + (uint8_t)48);
 
         return 1; // light dec point on second digit (given 1st digit is a -)
     }
 }
-
 
 // --- ROM CODE SECTION ------------------------------------------------------------
 // ROM1: KIM-1 ROM002 (monitor main code)                                 $17C0
@@ -256,8 +283,7 @@ const uint8_t rom002[1024] PROGMEM = {
     0x00, 0x00, 0x00, 0x0A, 0x0D, 0x4D, 0x49, 0x4B, 0x20, 0x13, 0x52, 0x52,
     0x45, 0x20, 0x13, 0xBF, 0x86, 0xDB, 0xCF, 0xE6, 0xED, 0xFD, 0x87, 0xFF,
     0xEF, 0xF7, 0xFC, 0xB9, 0xDE, 0xF9, 0xF1, 0xFF, 0xFF, 0xFF, 0x1C, 0x1C,
-    0x22, 0x1C, 0x1F, 0x1C
-};
+    0x22, 0x1C, 0x1F, 0x1C};
 
 const uint8_t rom003[1024] PROGMEM = {
     0xA9, 0xAD, 0x8D, 0xEC, 0x17, 0x20, 0x32, 0x19, 0xA9, 0x27, 0x8D, 0x42,
@@ -345,9 +371,7 @@ const uint8_t rom003[1024] PROGMEM = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x6B, 0x1A,
-    0x6B, 0x1A, 0x6B, 0x1A
-};
-
+    0x6B, 0x1A, 0x6B, 0x1A};
 
 // Microchess at C000:
 /* C:\temp27\KIM Uno\sw\KIM Uno 6502 ROM sources\microchess for KIM Uno\UCHESS7.BIN (15/09/2014 14:35:46)
@@ -470,8 +494,7 @@ const uint8_t mchess[1393] PROGMEM = {
     0x04, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x99, 0x25, 0x0B,
     0x25, 0x01, 0x00, 0x33, 0x25, 0x07, 0x36, 0x34, 0x0D, 0x34, 0x34, 0x0E,
     0x52, 0x25, 0x0D, 0x45, 0x35, 0x04, 0x55, 0x22, 0x06, 0x43, 0x33, 0x0F,
-    0xCC
-};
+    0xCC};
 
 /* C:\temp27\KIM Uno\sw\KIM Uno 6502 ROM sources\fltpt65 for KIM Uno\fs6.bin (19/09/2014 17:17:16)
    StartOffset: 00000000, EndOffset: 00001FDF, Length: 00001FE0 */
@@ -1157,57 +1180,53 @@ const uint8_t calcRom[8164] PROGMEM = {
     0x80, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x12, 0x30,
     0x00, 0x00, 0x00, 0x00, 0x40, 0x01, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x40, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x01, 0x33, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0xC0, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x50, 0x00
-};
+    0x00, 0x00, 0x00, 0x00, 0xC0, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x50, 0x00};
 
 /* MOVIT utility, copied into RAM 1780-17E3. Length: decimal 102 */
 /* for use, see http://users.telenet.be/kim1-6502/6502/fbok.html#p114 */
 const uint8_t movit[100] PROGMEM = {
-	0xD8, 	0xA0, 	0xFF, 	0x38, 	0xA5, 	0xD2, 	0xE5, 	0xD0, 	
-	0x85, 	0xD8, 	0xA5, 	0xD3, 	0xE5, 	0xD1, 	0x85, 	0xD9,
-	0x18, 	0xA5, 	0xD8, 	0x65, 	0xD4, 	0x85, 	0xD6,   0xA5, 	
-	0xD9, 	0x65, 	0xD5, 	0x85, 	0xD7,	0xE6, 	0xD8, 	0xE6,
-	0xD9, 	0x38, 	0xA5, 	0xD4, 	0xE5, 	0xD0, 	0xA5, 	0xD5, 	
-	0xE5, 	0xD1, 	0xA2, 	0x00, 	0x90, 	0x02, 	0xA2, 	0x02,
-	0xA1, 	0xD0, 	0x81, 	0xD4, 	0x90, 	0x14, 	0xC6, 	0xD2, 	
-	0x98, 	0x45, 	0xD2, 	0xD0, 	0x02, 	0xC6, 	0xD3, 	0xC6,
-	0xD6, 	0x98, 	0x45, 	0xD6, 	0xD0, 	0x02, 	0xC6, 	0xD7, 	
-	0xB0, 	0x0C, 	0xE6, 	0xD0, 	0xD0, 	0x02, 	0xE6, 	0xD1,
-	0xE6, 	0xD4, 	0xD0, 	0x02, 	0xE6, 	0xD5, 	0xC6, 	0xD8, 	
-	0xD0, 	0x02, 	0xC6, 	0xD9, 	0xD0, 	0xCC, 	0x00
-};
+    0xD8, 0xA0, 0xFF, 0x38, 0xA5, 0xD2, 0xE5, 0xD0,
+    0x85, 0xD8, 0xA5, 0xD3, 0xE5, 0xD1, 0x85, 0xD9,
+    0x18, 0xA5, 0xD8, 0x65, 0xD4, 0x85, 0xD6, 0xA5,
+    0xD9, 0x65, 0xD5, 0x85, 0xD7, 0xE6, 0xD8, 0xE6,
+    0xD9, 0x38, 0xA5, 0xD4, 0xE5, 0xD0, 0xA5, 0xD5,
+    0xE5, 0xD1, 0xA2, 0x00, 0x90, 0x02, 0xA2, 0x02,
+    0xA1, 0xD0, 0x81, 0xD4, 0x90, 0x14, 0xC6, 0xD2,
+    0x98, 0x45, 0xD2, 0xD0, 0x02, 0xC6, 0xD3, 0xC6,
+    0xD6, 0x98, 0x45, 0xD6, 0xD0, 0x02, 0xC6, 0xD7,
+    0xB0, 0x0C, 0xE6, 0xD0, 0xD0, 0x02, 0xE6, 0xD1,
+    0xE6, 0xD4, 0xD0, 0x02, 0xE6, 0xD5, 0xC6, 0xD8,
+    0xD0, 0x02, 0xC6, 0xD9, 0xD0, 0xCC, 0x00};
 
 /* RELOCATE utility, copied into RAM 0110-01A4. Length: decimal 149 */
 /* for use, see http://users.telenet.be/kim1-6502/6502/fbok.html#p114 */
 const uint8_t relocate[149] PROGMEM = {
-	0xD8, 	0xA0, 	0x00, 	0xB1, 	0xEA, 	0xA8,	0xA2, 	0x07, 	
-	0x98, 	0x3D, 	0x8E, 	0x01, 	0x5D, 	0x95, 	0x01, 	0xF0,
-	0x03, 	0xCA, 	0xD0, 	0xF4, 	0xBC, 	0x9D, 	0x01, 	0x30, 	
-	0x0D, 	0xF0, 	0x22, 	0xE6, 	0xEA, 	0xD0, 	0x02, 	0xE6,
-	0xEB, 	0x88, 	0xD0, 	0xF7, 	0xF0, 	0xDA, 	0xC8, 	0x30, 	
-	0xD9, 	0xC8, 	0xB1, 	0xEA, 	0xAA, 	0xC8, 	0xB1, 	0xEA,
-	0x20, 	0x79, 	0x01, 	0x91, 	0xEA, 	0x88, 	0x8A, 	0x91, 	
-	0xEA, 	0xA0, 	0x03, 	0x10, 	0xDE, 	0xC8, 	0xA6, 	0xEA,
-	0xA5, 	0xEB, 	0x20, 	0x79, 	0x01, 	0x86, 	0xE0, 	0xA2, 	
-	0xFF, 	0xB1, 	0xEA, 	0x18, 	0x69, 	0x02, 	0x30, 	0x01,
-	0xE8, 	0x86, 	0xE3, 	0x18, 	0x65, 	0xEA, 	0xAA, 	0xA5, 	
-	0xE3, 	0x65, 	0xEB, 	0x20, 	0x79, 	0x01, 	0xCA, 	0xCA,
-	0x8A, 	0x38, 	0xE5, 	0xE0, 	0x91, 	0xEA, 	0xC8, 	0x10, 	
-	0xB2, 	0xC5, 	0xE7, 	0xB0, 	0x11, 	0xC5, 	0xED, 	0xD0,
-	0x02, 	0xE4, 	0xEC, 	0x90, 	0x09, 	0x48, 	0x8A, 	0x18, 	
-	0x65, 	0xE8, 	0xAA, 	0x68, 	0x65, 	0xE9, 	0x60, 	0x0C,
-	0X1F,	0x0D, 	0x87, 	0X1F,	0xFF, 	0x03, 	0x0C, 	0x19, 	
-	0x08, 	0x00, 	0x10, 	0x20, 	0x03, 	0x02, 	0xFF, 	0xFF,
-	0x01, 	0x01, 	0x00, 	0xFF, 	0xFE
-};
+    0xD8, 0xA0, 0x00, 0xB1, 0xEA, 0xA8, 0xA2, 0x07,
+    0x98, 0x3D, 0x8E, 0x01, 0x5D, 0x95, 0x01, 0xF0,
+    0x03, 0xCA, 0xD0, 0xF4, 0xBC, 0x9D, 0x01, 0x30,
+    0x0D, 0xF0, 0x22, 0xE6, 0xEA, 0xD0, 0x02, 0xE6,
+    0xEB, 0x88, 0xD0, 0xF7, 0xF0, 0xDA, 0xC8, 0x30,
+    0xD9, 0xC8, 0xB1, 0xEA, 0xAA, 0xC8, 0xB1, 0xEA,
+    0x20, 0x79, 0x01, 0x91, 0xEA, 0x88, 0x8A, 0x91,
+    0xEA, 0xA0, 0x03, 0x10, 0xDE, 0xC8, 0xA6, 0xEA,
+    0xA5, 0xEB, 0x20, 0x79, 0x01, 0x86, 0xE0, 0xA2,
+    0xFF, 0xB1, 0xEA, 0x18, 0x69, 0x02, 0x30, 0x01,
+    0xE8, 0x86, 0xE3, 0x18, 0x65, 0xEA, 0xAA, 0xA5,
+    0xE3, 0x65, 0xEB, 0x20, 0x79, 0x01, 0xCA, 0xCA,
+    0x8A, 0x38, 0xE5, 0xE0, 0x91, 0xEA, 0xC8, 0x10,
+    0xB2, 0xC5, 0xE7, 0xB0, 0x11, 0xC5, 0xED, 0xD0,
+    0x02, 0xE4, 0xEC, 0x90, 0x09, 0x48, 0x8A, 0x18,
+    0x65, 0xE8, 0xAA, 0x68, 0x65, 0xE9, 0x60, 0x0C,
+    0X1F, 0x0D, 0x87, 0X1F, 0xFF, 0x03, 0x0C, 0x19,
+    0x08, 0x00, 0x10, 0x20, 0x03, 0x02, 0xFF, 0xFF,
+    0x01, 0x01, 0x00, 0xFF, 0xFE};
 
 /* BRANCH calculation utility, to be copied into RAM anywhere you want (relocatable). Length: decimal 42 */
-/* for use, see http://users.telenet.be/kim1-6502/6502/fbok.html#p114 */
+/* for use, see http://users.telenet.be/kim1-6502/6502/fbok.htmln#p114 */
 const uint8_t branch[42] PROGMEM = {
-	0xD8, 0x18, 0xA5, 0xFA, 0xE5, 0xFB, 0x85, 0xF9, 0xC6, 0xF9, 0x20, 0x1F, 0x1F,  0x20, 0x6A, 0x1F,
-	0xC5, 0xF3, 0xF0, 0xEC, 0x85, 0xF3, 0xC9, 0x10, 0xB0, 0xE6, 0x0A, 0x0A, 0x0A, 0x0A, 0xA2, 0x04,
-	0x0A, 0x26, 0xFA, 0x26, 0xFB, 0xCA, 0xD0, 0xF8, 0xF0, 0xD6
-};
+    0xD8, 0x18, 0xA5, 0xFA, 0xE5, 0xFB, 0x85, 0xF9, 0xC6, 0xF9, 0x20, 0x1F, 0x1F, 0x20, 0x6A, 0x1F,
+    0xC5, 0xF3, 0xF0, 0xEC, 0x85, 0xF3, 0xC9, 0x10, 0xB0, 0xE6, 0x0A, 0x0A, 0x0A, 0x0A, 0xA2, 0x04,
+    0x0A, 0x26, 0xFA, 0x26, 0xFB, 0xCA, 0xD0, 0xF8, 0xF0, 0xD6};
 
 /* C:\temp27\KIM Uno\sw\tools\WozBaum disasm\WozBaum disasm\dis2.bin (02/09/2014 23:58:36)
    StartOffset: 00000000, EndOffset: 000001F8, Length: 000001F9 */
@@ -1254,70 +1273,88 @@ const uint8_t disasm[505] PROGMEM = {
     0x4A, 0x72, 0xF2, 0xA4, 0x8A, 0x00, 0xAA, 0xA2, 0xA2, 0x74, 0x74, 0x74,
     0x72, 0x44, 0x68, 0xB2, 0x32, 0xB2, 0x00, 0x22, 0x00, 0x1A, 0x1A, 0x26,
     0x26, 0x72, 0x72, 0x88, 0xC8, 0xC4, 0xCA, 0x26, 0x48, 0x44, 0x44, 0xA2,
-    0xC8
-};
-
+    0xC8};
 
 uint8_t read6502(uint16_t address)
 {
     uint8_t tempval = 0;
 
-    if (address < 0x0400) {				// 0x0000-0x0400 is RAM
-        return(RAM[address]);
+    if (address < 0x0400)
+    { // 0x0000-0x0400 is RAM
+        return (RAM[address]);
     }
-    if (address < 0x0800) {
-        return(eepromread(address - 0x0400));	// 0x0400-0x0800 is EEPROM for Arduino,
-    }										// 0x0800-0x1700 is empty space, should not be read
-    if (address < 0x1700) {             		// read in empty space
+
+#ifdef USE_EPROM
+    if (address < 0x0800)
+    {
+        return (eepromread(address - 0x0400)); // 0x0400-0x0800 is EEPROM for Arduino,
+    }                                          // 0x0800-0x1700 is empty space, should not be read
+#endif
+
+    if (address < 0x1700)
+    { // read in empty space
         serout('%');
-        serout('5');      		// error code 5 - read in empty space
-        return(0);
+        serout('5'); // error code 5 - read in empty space
+        return (0);
     }
-    if (address < 0x1740) {             	// 0x1700-0x1740 is IO space of RIOT 003
+    if (address < 0x1740)
+    { // 0x1700-0x1740 is IO space of RIOT 003
         serout('%');
-        serout('7');      		// trap code 7 - read in I/O 003
-        return(0);
+        serout('7'); // trap code 7 - read in I/O 003
+        return (0);
     }
-    if (address < 0x1780) {             	// 0x1740-0x1780 is IO space of RIOT 002
-        if (address == 0x1747) return (0xFF); // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
-        if (address == 0x1740) return (useKeyboardLed);	// returns 1 for Keyboard/LED or 0 for Serial terminal
+    if (address < 0x1780)
+    { // 0x1740-0x1780 is IO space of RIOT 002
+        if (address == 0x1747)
+            return (0xFF); // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
+        if (address == 0x1740)
+            return (useKeyboardLed); // returns 1 for Keyboard/LED or 0 for Serial terminal
         serout('%');
-        serout('6');      		// trap code 6 - read in I/O 002
-        return(0);
+        serout('6'); // trap code 6 - read in I/O 002
+        return (0);
     }
-    if (address < 0x17C0) {             	// 0x1780-0x17C0 is RAM from RIOT 003
-        return(RAM003[address - 0x1780]);
+    if (address < 0x17C0)
+    { // 0x1780-0x17C0 is RAM from RIOT 003
+        return (RAM003[address - 0x1780]);
     }
-    if (address < 0x1800) {            	// 0x17C0-0x1800 is RAM from RIOT 002
-        return(RAM002[address - 0x17C0]);
+    if (address < 0x1800)
+    { // 0x17C0-0x1800 is RAM from RIOT 002
+        return (RAM002[address - 0x17C0]);
     }
-    if (address < 0x1C00) {              	// 0x1800-0x1C00 is ROM 003
-        return(pgm_read_byte_near(rom003 + address - 0x1800));
+    if (address < 0x1C00)
+    { // 0x1800-0x1C00 is ROM 003
+        return (pgm_read_byte_near(rom003 + address - 0x1800));
     }
-    if (address < 0x2000) {			// 0x1C00-0x2000 is ROM 002. It needs some intercepting from emulator...
-        if (address == 0x1EA0) { // intercept OUTCH (send char to serial)
-            serout(a);		// print A to serial
+    if (address < 0x2000)
+    { // 0x1C00-0x2000 is ROM 002. It needs some intercepting from emulator...
+        if (address == 0x1EA0)
+        {                  // intercept OUTCH (send char to serial)
+            serout(a);     // print A to serial
             pc = 0x1ED3;   // skip subroutine
             return (0xEA); // and return from subroutine with a fake NOP instruction
         }
-        if (address == 0x1E65) {	//intercept GETCH (get char from serial). used to be 0x1E5A, but intercept *within* routine just before get1 test
-            a = getAkey();		// get A from main loop's curkey
-            if (a == 0) {
-                pc = 0x1E60;	// cycle through GET1 loop for character start, let the 6502 runs through this loop in a fake way
+        if (address == 0x1E65)
+        {                  //intercept GETCH (get char from serial). used to be 0x1E5A, but intercept *within* routine just before get1 test
+            a = getAkey(); // get A from main loop's curkey
+            if (a == 0)
+            {
+                pc = 0x1E60; // cycle through GET1 loop for character start, let the 6502 runs through this loop in a fake way
                 return (0xEA);
             }
             clearkey();
-            x = RAM[0x00FD];	// x is saved in TMPX by getch routine, we need to get it back in x;
-            pc = 0x1E87;   // skip subroutine
-            return (0xEA); // and return from subroutine with a fake NOP instruction
+            x = RAM[0x00FD]; // x is saved in TMPX by getch routine, we need to get it back in x;
+            pc = 0x1E87;     // skip subroutine
+            return (0xEA);   // and return from subroutine with a fake NOP instruction
         }
-        if (address == 0x1C2A) { // intercept DETCPS
+        if (address == 0x1C2A)
+        {                                // intercept DETCPS
             RAM002[0x17F3 - 0x17C0] = 1; // just store some random bps delay on TTY in CNTH30
-            RAM002[0x17F2 - 0x17C0] = 1;	// just store some random bps delay on TTY in CNTL30
-            pc = 0x1C4F;    // skip subroutine
-            return (0xEA); // and return from subroutine with a fake NOP instruction
+            RAM002[0x17F2 - 0x17C0] = 1; // just store some random bps delay on TTY in CNTL30
+            pc = 0x1C4F;                 // skip subroutine
+            return (0xEA);               // and return from subroutine with a fake NOP instruction
         }
-        if (address == 0x1F1F) { // intercept SCANDS (display F9,FA,FB)
+        if (address == 0x1F1F)
+        { // intercept SCANDS (display F9,FA,FB)
             // light LEDs ---------------------------------------------------------
             threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
             threeHex[0][1] = RAM[0x00FB] & 0xF;
@@ -1328,212 +1365,225 @@ uint8_t read6502(uint16_t address)
 
             serout(13);
             serout('>');
-            for (iii = 0; iii < 3; iii++) {
+            for (iii = 0; iii < 3; iii++)
+            {
                 serouthex(threeHex[iii][0]);
                 serouthex(threeHex[iii][1]);
-		if (iii != 2)
-		    serout(' ');
+                if (iii != 2)
+                    serout(' ');
             }
             serout('<');
             serout(13);
             driveLEDs();
 
-            pc = 0x1F45;    // skip subroutine part that deals with LEDs
+            pc = 0x1F45;   // skip subroutine part that deals with LEDs
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
         }
-        if (address == 0x1EFE) { // intercept AK (check for any key pressed)
-            a = getAkey();		 // 0 means no key pressed - the important bit - but if a key is pressed is curkey the right value to send back?
+        if (address == 0x1EFE)
+        {                  // intercept AK (check for any key pressed)
+            a = getAkey(); // 0 means no key pressed - the important bit - but if a key is pressed is curkey the right value to send back?
             //a= getKIMkey();
-            if (a == 0)	a = 0xFF; // that's how AK wants to see 'no key'
-            pc = 0x1F14;    // skip subroutine
+            if (a == 0)
+                a = 0xFF;  // that's how AK wants to see 'no key'
+            pc = 0x1F14;   // skip subroutine
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
-        if (address == 0x1F6A) { // intercept GETKEY (get key from keyboard)
+        if (address == 0x1F6A)
+        { // intercept GETKEY (get key from keyboard)
             //		serout('-');serout('G');serout('K');serout('-');
-            a = getKIMkey();		 // curkey = the key code in the emulator's keyboard buffer
+            a = getKIMkey(); // curkey = the key code in the emulator's keyboard buffer
             clearkey();
-            pc = 0x1F90;    // skip subroutine part that deals with LEDs
+            pc = 0x1F90;   // skip subroutine part that deals with LEDs
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
         // if we're still here, it's normal reading from the highest ROM 002.
-        return(pgm_read_byte_near(rom002 + address - 0x1C00)); // ROM 002
+        return (pgm_read_byte_near(rom002 + address - 0x1C00)); // ROM 002
     }
 
-    if (address < 0x21F9) {            	// 0x2000-0x21F8 is disasm
-        return(pgm_read_byte_near(disasm + address - 0x2000));
+    if (address < 0x21F9)
+    { // 0x2000-0x21F8 is disasm
+        return (pgm_read_byte_near(disasm + address - 0x2000));
     }
 
-    if ((address >= 0x5000) && (address <= 0x6FE3)) {	
-	// 0x6FDF, plus 4 bytes for JSR manually added - 
-	// Read to floating point library between $5000 and $6157
-        return(pgm_read_byte_near(calcRom + address - 0xD000)); // mchess ROM
+    if ((address >= 0x5000) && (address <= 0x6FE3))
+    {
+        // 0x6FDF, plus 4 bytes for JSR manually added -
+        // Read to floating point library between $5000 and $6157
+        return (pgm_read_byte_near(calcRom + address - 0xD000)); // mchess ROM
     }
-    if ((address >= 0x7000) && (address <= 0x7200)) {   // 6502 programmable calculator functions
-        switch (address) {
+    if ((address >= 0x7000) && (address <= 0x7200))
+    { // 6502 programmable calculator functions
+        switch (address)
+        {
         // 70Ax SERIES: ASK FOR A VALUE INTO REGISTER x
-        case 0x70A1:      // Load W1
+        case 0x70A1: // Load W1
             enterflt((uint8_t)0);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70A2:      // Load W2
+        case 0x70A2: // Load W2
             enterflt(1);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70A3:      // Load W3
+        case 0x70A3: // Load W3
             enterflt(2);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70A4:      // Load W4
+        case 0x70A4: // Load W4
             enterflt(3);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70AA:      // Load A
+        case 0x70AA: // Load A
             a = enteroperation();
             serout(a);
             if (a == 0)
                 setzero();
             else
                 clearzero();
-            return(0x60);
+            return (0x60);
             break;
 
         //70Dx SERIES: DISPLAY REGISTER x
-        case 0x70D1:      // View W1
+        case 0x70D1: // View W1
             showflt(0);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70D2:      // View W2
+        case 0x70D2: // View W2
             showflt(1);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70D3:      // View W3
+        case 0x70D3: // View W3
             showflt(2);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x70D4:      // View W4
+        case 0x70D4: // View W4
             showflt(3);
-            return(0x60);
+            return (0x60);
             break;
 
         //71xy SERIES: SWAP REG x AND REG y
-        case 0x7113:      // Swap W1-W3
+        case 0x7113: // Swap W1-W3
             swapWreg(1, 3);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7123:      // Swap W2-W3
+        case 0x7123: // Swap W2-W3
             swapWreg(2, 3);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7114:      // Swap W1-W4
+        case 0x7114: // Swap W1-W4
             swapWreg(1, 4);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7124:      // Swap W2-W4
+        case 0x7124: // Swap W2-W4
             swapWreg(2, 4);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7112:      // Swap W1-W2
+        case 0x7112: // Swap W1-W2
             swapWreg(1, 2);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7134:      // Swap W3-W4
+        case 0x7134: // Swap W3-W4
             swapWreg(3, 4);
-            return(0x60);
+            return (0x60);
             break;
 
         //70xy SERIES: COPY REG x INTO REG y
-        case 0x7013:      // Copy W1-W3
+        case 0x7013: // Copy W1-W3
             copyWreg(1, 3);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7023:      // Copy W2-W3
+        case 0x7023: // Copy W2-W3
             copyWreg(2, 3);
-            return(0x60);
+            return (0x60);
             break;
 
-        case 0x7031:      // Copy W3-W1
-//              serout('C');
+        case 0x7031: // Copy W3-W1
+                     //              serout('C');
             copyWreg(3, 1);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7032:      // Copy W3-W2
+        case 0x7032: // Copy W3-W2
             copyWreg(3, 2);
-            return(0x60);
+            return (0x60);
             break;
 
-
-        case 0x7014:      // Copy W1-W4
+        case 0x7014: // Copy W1-W4
             copyWreg(1, 4);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7024:      // Copy W2-W4
+        case 0x7024: // Copy W2-W4
             copyWreg(2, 4);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7034:      // Copy W3-W4
+        case 0x7034: // Copy W3-W4
             copyWreg(3, 4);
-            return(0x60);
+            return (0x60);
             break;
 
-        case 0x7041:      // Copy W4-W1
+        case 0x7041: // Copy W4-W1
             copyWreg(4, 1);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7042:      // Copy W4-W2
+        case 0x7042: // Copy W4-W2
             copyWreg(4, 2);
-            return(0x60);
+            return (0x60);
             break;
-        case 0x7043:      // Copy W4-W3
+        case 0x7043: // Copy W4-W3
             copyWreg(4, 3);
-            return(0x60);
+            return (0x60);
             break;
 
         default:
             serout('%');
-            serout('A');  // error code on serial port to warn of illegal address read
-            return (0x00);  // DO A brk TO HALT PROGRAM IF ANY OTHER ADDRESS IS CALLED
+            serout('A');   // error code on serial port to warn of illegal address read
+            return (0x00); // DO A brk TO HALT PROGRAM IF ANY OTHER ADDRESS IS CALLED
         }
     }
 
+    if (address >= 0xC000 && address <= 0xC571)
+    {                           // Read to Microchess ROM between $C000 and $C571
+        if (address == 0xC202)  // intercept C202: Blitz mode should return 0 instead of 8
+            if (blitzMode == 1) // This is the Blitz mode hack from the microchess manual.
+                return ((uint8_t)0x00);
 
-    if (address >= 0xC000 && address <= 0xC571) {	// Read to Microchess ROM between $C000 and $C571
-        if (address == 0xC202) 	// intercept C202: Blitz mode should return 0 instead of 8
-            if (blitzMode == 1)	// This is the Blitz mode hack from the microchess manual.
-                return((uint8_t) 0x00);
-
-        return(pgm_read_byte_near(mchess + address - 0xC000)); // mchess ROM
+        return (pgm_read_byte_near(mchess + address - 0xC000)); // mchess ROM
     }
     // I/O functions just for Microchess: ---------------------------------------------------
     // $F003: 0 = no key pressed, 1 key pressed
     // $F004: input from user
     // (also, in write6502: $F001: output character to display)
-    if (address == 0xCFF4) {				//simulated keyboard input
+    if (address == 0xCFF4)
+    { //simulated keyboard input
         tempval = getAkey();
         clearkey();
         // translate KIM-1 button codes into ASCII code expected by this version of Microchess
-        switch (tempval) {
+        switch (tempval)
+        {
         case 16:
             tempval = 'P';
-            break;    // PC translated to P
+            break; // PC translated to P
         case 'F':
             tempval = 13;
-            break;    // F translated to Return
+            break; // F translated to Return
         case '+':
             tempval = 'W';
-            break;    // + translated to W meaning Blitz mode toggle
+            break; // + translated to W meaning Blitz mode toggle
         }
-        if (tempval == 0x57) { // 'W'. If user presses 'W', he wants to enable Blitz mode.
-            if (blitzMode == 1) (blitzMode = 0);
-            else              (blitzMode = 1);
+        if (tempval == 0x57)
+        { // 'W'. If user presses 'W', he wants to enable Blitz mode.
+            if (blitzMode == 1)
+                (blitzMode = 0);
+            else
+                (blitzMode = 1);
             serout('>');
-            serout( (blitzMode == 1) ? 'B' : 'N' );
+            serout((blitzMode == 1) ? 'B' : 'N');
             serout('<');
         }
-        return(tempval);
+        return (tempval);
     }
-    if (address == 0xCFF3) {				
+    if (address == 0xCFF3)
+    {
 
-	// simulated keyboard input 0=no key press, 1 = key press light LEDs
+        // simulated keyboard input 0=no key press, 1 = key press light LEDs
 
         threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
         threeHex[0][1] = RAM[0x00FB] & 0xF;
@@ -1543,69 +1593,82 @@ uint8_t read6502(uint16_t address)
         threeHex[2][1] = RAM[0x00F9] & 0xF;
         driveLEDs();
 
-        return(getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
+        return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
     }
 
-
-    if (address >= 0xFFFA) {				
-	// 6502 reset and interrupt vectors. Reroute to top of ROM002.  
-	return(pgm_read_byte_near(rom002 + address - 0xFC00)); 
+    if (address >= 0xFFFA)
+    {
+        // 6502 reset and interrupt vectors. Reroute to top of ROM002.
+        return (pgm_read_byte_near(rom002 + address - 0xFC00));
     }
 
-    serout('%'); serout('9');
+    serout('%');
+    serout('9');
 
     // This should never be reached unless some addressing bug, so return 6502 BRK
-    return (0);	
+    return (0);
 }
-
 
 void write6502(uint16_t address, uint8_t value)
 {
-    if (address < 0x0400) {
+    if (address < 0x0400)
+    {
         RAM[address] = value;
         return;
     }
-    if (address < 0x0800) {
+
+#ifdef USE_EPROM
+    if (address < 0x0800)
+    {
         eepromwrite(address - 0x0400, value); // 0x0500-0x0900 is EEPROM for Arduino,
         return;
     }
-    if (address < 0x1700) {                          // illegal access
+#endif
+
+    if (address < 0x1700)
+    { // illegal access
         serout('%');
-        serout('1');      // error code 1 - write in empty space
+        serout('1'); // error code 1 - write in empty space
         return;
     }
-    if (address < 0x1740) {                          // I/O 003
+    if (address < 0x1740)
+    { // I/O 003
         serout('%');
-        serout('3');      // trap code 3 - io3 access
+        serout('3'); // trap code 3 - io3 access
         return;
     }
-    if (address < 0x1780) {                          // I/O 002
-//    serout('%');  serout('2');      // trap code 2 - io2 access
+    if (address < 0x1780)
+    {   // I/O 002
+        //    serout('%');  serout('2');      // trap code 2 - io2 access
         return;
     }
-    if (address < 0x17C0) {                          // RAM 003
+    if (address < 0x17C0)
+    { // RAM 003
         RAM003[address - 0x1780] = value;
         return;
     }
-    if (address < 0x1800) {                          // RAM002
+    if (address < 0x1800)
+    { // RAM002
         RAM002[address - 0x17C0] = value;
         return;
     }
 
-    if ((address >= 0x5000) && (address <= 0x6FDF)) {                        // illegal write in fltpt65 ROM
-//	  printf("WARNING: WRITE TO ROM\n");
+    if ((address >= 0x5000) && (address <= 0x6FDF))
+    {   // illegal write in fltpt65 ROM
+        //	  printf("WARNING: WRITE TO ROM\n");
         serout('%');
         serout('a');
         return;
     }
 
     // Character out function for microchess only: write to display at $F001
-    if (address == 0xCFF1) {                          // Character out for microchess only
+    if (address == 0xCFF1)
+    { // Character out for microchess only
         serout(value);
         return;
     }
     serout('%');
-    serout('4');      // error code 4 - write to ROM
+    serout('4'); // error code 4 - write to ROM
 }
 
 // two functions for fltpt65 support: copy/swap W registers
@@ -1619,7 +1682,8 @@ void copyWreg(uint8_t a, uint8_t b)
 void swapWreg(uint8_t a, uint8_t b)
 {
     uint8_t i, buffer;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         buffer = RAM[WREG_OFFSET + 8 * (a - 1) + i];
         RAM[WREG_OFFSET + 8 * (a - 1) + i] = RAM[WREG_OFFSET + 8 * (b - 1) + i];
         RAM[WREG_OFFSET + 8 * (b - 1) + i] = buffer;
@@ -1644,7 +1708,7 @@ uint16_t pull16()
     uint16_t temp16;
     temp16 = read6502(BASE_STACK + ((sp + 1) & 0xFF)) | ((uint16_t)read6502(BASE_STACK + ((sp + 2) & 0xFF)) << 8);
     sp += 2;
-    return(temp16);
+    return (temp16);
 }
 
 uint8_t pull8()
@@ -1654,11 +1718,11 @@ uint8_t pull8()
 
 void reset6502()
 {
-//printf ("test at reset: %x %x\n",0xFFFC, 0xFFFD);
+    //printf ("test at reset: %x %x\n",0xFFFC, 0xFFFD);
 
     pc = (uint16_t)read6502(0xFFFC) | ((uint16_t)read6502(0xFFFD) << 8);
-//pc = 0x1C22;
-//	printf ("pc: %x\n",pc);
+    //pc = 0x1C22;
+    //	printf ("pc: %x\n",pc);
     a = 0;
     x = 0;
     y = 0;
@@ -1681,20 +1745,23 @@ void initKIM()
     // overwritten by users - it's an extra note that the HTML version of the
     // book contains OR scan codes, so don't take the bytes from there!
 
-    for (i = 0; i < 64; i++) { //64 of 102 program bytes
+    for (i = 0; i < 64; i++)
+    { //64 of 102 program bytes
         RAM003[i] = pgm_read_byte_near(movit + i);
     }
 
     // movit spans into the second 64 byte memory segment...
 
-    for (i = 0; i < (95 - 64); i++) {
+    for (i = 0; i < (95 - 64); i++)
+    {
         RAM002[i] = pgm_read_byte_near(movit + i + 64);
     }
 
     // the code below copies relocate to 0x0110 in RAM. It can be overwritten
     // by users or by the stack pointer - it's an extra
 
-    for (i = 0; i < 149; i++) {
+    for (i = 0; i < 149; i++)
+    {
         RAM[i + 0x0110] = pgm_read_byte_near(relocate + i);
     }
 
@@ -1703,21 +1770,20 @@ void initKIM()
     // be damaged by the stack, because it ends at 1CF. Still, the monitor
     // brings the stack down to no worse than 0x1FF-8.
 
-    for (i = 0; i < 42; i++) {
+    for (i = 0; i < 42; i++)
+    {
         //RAM002[i] = pgm_read_byte_near(branch + i);
         RAM[i + 0x01A5] = pgm_read_byte_near(branch + i);
     }
-
 }
 
-void loadTestProgram()    // Call this from main() if you want a program preloaded. It's the first program from First Book of KIM...
+void loadTestProgram() // Call this from main() if you want a program preloaded. It's the first program from First Book of KIM...
 {
     uint8_t i;
 
     // the first program from First Book of KIM...
     uint8_t fbkDemo[9] = {
-        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00
-    };
+        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
     for (i = 0; i < 9; i++)
         RAM[i + 0x0200] = fbkDemo[i];
     RAM[0x0010] = 0x10;
@@ -1728,8 +1794,7 @@ void loadTestProgram()    // Call this from main() if you want a program preload
         0x20, 0xA1, 0x70, 0x20, 0xA2, 0x70, 0xA9, 0x02, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70,
         0x20, 0xAA, 0x70,
         0xF0, 0x08,
-        0x20, 0x31, 0x70, 0xA9, 0x04, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70, 0x00
-    };
+        0x20, 0x31, 0x70, 0xA9, 0x04, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70, 0x00};
     for (i = 0x0; i < 31; i++)
         RAM[i + 0x0210] = fltptDemo[i];
 
@@ -1762,62 +1827,63 @@ void loadTestProgram()    // Call this from main() if you want a program preload
 }
 
 //addressing mode functions, calculates effective addresses
-void imp()   //implied
+void imp() //implied
 {
 }
 
-void acc()   //accumulator
+void acc() //accumulator
 {
     useaccum = 1;
 }
 
-void imm()   //immediate
+void imm() //immediate
 {
     ea = pc++;
 }
 
-void zp()   //zero-page
+void zp() //zero-page
 {
     ea = (uint16_t)read6502((uint16_t)pc++);
 }
 
-void zpx()   //zero-page,X
+void zpx() //zero-page,X
 {
     ea = ((uint16_t)read6502((uint16_t)pc++) + (uint16_t)x) & 0xFF; //zero-page wraparound
 }
 
-void zpy()   //zero-page,Y
+void zpy() //zero-page,Y
 {
     ea = ((uint16_t)read6502((uint16_t)pc++) + (uint16_t)y) & 0xFF; //zero-page wraparound
 }
 
-void rel()   //relative for branch ops (8-bit immediate value, sign-extended)
+void rel() //relative for branch ops (8-bit immediate value, sign-extended)
 {
     reladdr = (uint16_t)read6502(pc++);
-    if (reladdr & 0x80) reladdr |= 0xFF00;
+    if (reladdr & 0x80)
+        reladdr |= 0xFF00;
 }
 
-void abso()   //absolute
+void abso() //absolute
 {
     ea = (uint16_t)read6502(pc) | ((uint16_t)read6502(pc + 1) << 8);
     pc += 2;
 }
 
-void absx()   //absolute,X
+void absx() //absolute,X
 {
     ea = ((uint16_t)read6502(pc) | ((uint16_t)read6502(pc + 1) << 8));
     ea += (uint16_t)x;
     pc += 2;
 }
 
-void absy()   //absolute,Y
+void absy() //absolute,Y
 {
     ea = ((uint16_t)read6502(pc) | ((uint16_t)read6502(pc + 1) << 8));
     ea += (uint16_t)y;
     pc += 2;
 }
 
-void ind()   //indirect
+void ind() //indirect
 {
     uint16_t eahelp, eahelp2;
     eahelp = (uint16_t)read6502(pc) | (uint16_t)((uint16_t)read6502(pc + 1) << 8);
@@ -1826,16 +1892,16 @@ void ind()   //indirect
     pc += 2;
 }
 
-void indx()   // (indirect,X)
+void indx() // (indirect,X)
 {
     uint16_t eahelp;
     eahelp = (uint16_t)(((uint16_t)read6502(pc++) + (uint16_t)x) & 0xFF); //zero-page wraparound for table pointer
     ea = (uint16_t)read6502(eahelp & 0x00FF) | ((uint16_t)read6502((eahelp + 1) & 0x00FF) << 8);
 }
 
-void indy()   // (indirect),Y
+void indy() // (indirect),Y
 {
-    uint16_t eahelp, eahelp2 ;
+    uint16_t eahelp, eahelp2;
     eahelp = (uint16_t)read6502(pc++);
     eahelp2 = (eahelp & 0xFF00) | ((eahelp + 1) & 0x00FF); //zero-page wraparound
     ea = (uint16_t)read6502(eahelp) | ((uint16_t)read6502(eahelp2) << 8);
@@ -1844,8 +1910,10 @@ void indy()   // (indirect),Y
 
 static uint16_t getvalue()
 {
-    if (useaccum) return((uint16_t)a);
-    else return((uint16_t)read6502(ea));
+    if (useaccum)
+        return ((uint16_t)a);
+    else
+        return ((uint16_t)read6502(ea));
 }
 
 /*static uint16_t getvalue16() {
@@ -1854,25 +1922,29 @@ static uint16_t getvalue()
 
 void putvalue(uint16_t saveval)
 {
-    if (useaccum) a = (uint8_t)(saveval & 0x00FF);
-    else write6502(ea, (saveval & 0x00FF));
+    if (useaccum)
+        a = (uint8_t)(saveval & 0x00FF);
+    else
+        write6502(ea, (saveval & 0x00FF));
 }
-
 
 //instruction handler functions
 void adc()
 {
     value = getvalue();
 
-// BCD fix OV 20140915 - adc
-    if ((cpustatus & FLAG_DECIMAL) == 0) {
+    // BCD fix OV 20140915 - adc
+    if ((cpustatus & FLAG_DECIMAL) == 0)
+    {
         result = (uint16_t)a + value + (uint16_t)(cpustatus & FLAG_CARRY);
 
         carrycalc(result);
         zerocalc(result);
         overflowcalc(result, a, value);
         signcalc(result);
-    } else { // #ifndef NES_CPU
+    }
+    else
+    { // #ifndef NES_CPU
         // Decimal mode
         lxx = (a & 0x0f) + (value & 0x0f) + (uint16_t)(cpustatus & FLAG_CARRY);
         if ((lxx & 0xFF) > 0x09)
@@ -1889,13 +1961,13 @@ void adc()
         else
             clearcarry();
         zerocalc(result);
-        clearsign();	// negative flag never set for decimal mode.
-        clearoverflow();	// overflow never set for decimal mode.
-// end of BCD fix PART 2
+        clearsign();     // negative flag never set for decimal mode.
+        clearoverflow(); // overflow never set for decimal mode.
+                         // end of BCD fix PART 2
 
         clockticks6502++;
     }
-//    #endif // of NES_CPU
+    //    #endif // of NES_CPU
 
     saveaccum(result);
 }
@@ -1925,31 +1997,40 @@ void asl()
 
 void bcc()
 {
-    if ((cpustatus & FLAG_CARRY) == 0) {
+    if ((cpustatus & FLAG_CARRY) == 0)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void bcs()
 {
-    if ((cpustatus & FLAG_CARRY) == FLAG_CARRY) {
+    if ((cpustatus & FLAG_CARRY) == FLAG_CARRY)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void beq()
 {
-    if ((cpustatus & FLAG_ZERO) == FLAG_ZERO) {
+    if ((cpustatus & FLAG_ZERO) == FLAG_ZERO)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
@@ -1964,60 +2045,75 @@ void op_bit()
 
 void bmi()
 {
-    if ((cpustatus & FLAG_SIGN) == FLAG_SIGN) {
+    if ((cpustatus & FLAG_SIGN) == FLAG_SIGN)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void bne()
 {
-    if ((cpustatus & FLAG_ZERO) == 0) {
+    if ((cpustatus & FLAG_ZERO) == 0)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void bpl()
 {
-    if ((cpustatus & FLAG_SIGN) == 0) {
+    if ((cpustatus & FLAG_SIGN) == 0)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void brk()
 {
     pc++;
-    push16(pc); //push next instruction address onto stack
+    push16(pc);                    //push next instruction address onto stack
     push8(cpustatus | FLAG_BREAK); //push CPU cpustatus to stack
-    setinterrupt(); //set interrupt flag
+    setinterrupt();                //set interrupt flag
     pc = (uint16_t)read6502(0xFFFE) | ((uint16_t)read6502(0xFFFF) << 8);
 }
 
 void bvc()
 {
-    if ((cpustatus & FLAG_OVERFLOW) == 0) {
+    if ((cpustatus & FLAG_OVERFLOW) == 0)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
 void bvs()
 {
-    if ((cpustatus & FLAG_OVERFLOW) == FLAG_OVERFLOW) {
+    if ((cpustatus & FLAG_OVERFLOW) == FLAG_OVERFLOW)
+    {
         oldpc = pc;
         pc += reladdr;
-        if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-        else clockticks6502++;
+        if ((oldpc & 0xFF00) != (pc & 0xFF00))
+            clockticks6502 += 2; //check if jump crossed a page boundary
+        else
+            clockticks6502++;
     }
 }
 
@@ -2046,10 +2142,14 @@ void cmp()
     value = getvalue();
     result = (uint16_t)a - value;
 
-    if (a >= (uint8_t)(value & 0x00FF)) setcarry();
-    else clearcarry();
-    if (a == (uint8_t)(value & 0x00FF)) setzero();
-    else clearzero();
+    if (a >= (uint8_t)(value & 0x00FF))
+        setcarry();
+    else
+        clearcarry();
+    if (a == (uint8_t)(value & 0x00FF))
+        setzero();
+    else
+        clearzero();
     signcalc(result);
 }
 
@@ -2058,10 +2158,14 @@ void cpx()
     value = getvalue();
     result = (uint16_t)x - value;
 
-    if (x >= (uint8_t)(value & 0x00FF)) setcarry();
-    else clearcarry();
-    if (x == (uint8_t)(value & 0x00FF)) setzero();
-    else clearzero();
+    if (x >= (uint8_t)(value & 0x00FF))
+        setcarry();
+    else
+        clearcarry();
+    if (x == (uint8_t)(value & 0x00FF))
+        setzero();
+    else
+        clearzero();
     signcalc(result);
 }
 
@@ -2070,10 +2174,14 @@ void cpy()
     value = getvalue();
     result = (uint16_t)y - value;
 
-    if (y >= (uint8_t)(value & 0x00FF)) setcarry();
-    else clearcarry();
-    if (y == (uint8_t)(value & 0x00FF)) setzero();
-    else clearzero();
+    if (y >= (uint8_t)(value & 0x00FF))
+        setcarry();
+    else
+        clearcarry();
+    if (y == (uint8_t)(value & 0x00FF))
+        setzero();
+    else
+        clearzero();
     signcalc(result);
 }
 
@@ -2185,8 +2293,10 @@ void lsr()
     value = getvalue();
     result = value >> 1;
 
-    if (value & 1) setcarry();
-    else clearcarry();
+    if (value & 1)
+        setcarry();
+    else
+        clearcarry();
     zerocalc(result);
     signcalc(result);
 
@@ -2248,8 +2358,10 @@ void ror()
     value = getvalue();
     result = (value >> 1) | ((cpustatus & FLAG_CARRY) << 7);
 
-    if (value & 1) setcarry();
-    else clearcarry();
+    if (value & 1)
+        setcarry();
+    else
+        clearcarry();
     zerocalc(result);
     signcalc(result);
 
@@ -2271,8 +2383,9 @@ void rts()
 
 void sbc()
 {
-// BCD fix OV 20140915 - adc
-    if ((cpustatus & FLAG_DECIMAL) == 0) {
+    // BCD fix OV 20140915 - adc
+    if ((cpustatus & FLAG_DECIMAL) == 0)
+    {
         value = getvalue() ^ 0x00FF;
         result = (uint16_t)a + value + (uint16_t)(cpustatus & FLAG_CARRY);
 
@@ -2280,7 +2393,9 @@ void sbc()
         zerocalc(result);
         overflowcalc(result, a, value);
         signcalc(result);
-    } else { //   #ifndef NES_CPU
+    }
+    else
+    { //   #ifndef NES_CPU
         // decimal mode
         value = getvalue();
         lxx = (a & 0x0f) - (value & 0x0f) - (uint16_t)((cpustatus & FLAG_CARRY) ? 0 : 1);
@@ -2294,18 +2409,18 @@ void sbc()
         result = (lxx & 0x0f) | (hxx << 4);
         // deal with carry
         if ((hxx & 0xff) < 15)
-            setcarry();			// right? I think so. Intended is   setCarryFlag((hxx & 0xff) < 15);
+            setcarry(); // right? I think so. Intended is   setCarryFlag((hxx & 0xff) < 15);
         else
             clearcarry();
         zerocalc(result); // zero dec is zero hex, no problem?
-        clearsign();	// negative flag never set for decimal mode. That's a simplification, see http://www.6502.org/tutorials/decimal_mode.html
-        clearoverflow();	// overflow never set for decimal mode.
+        clearsign();      // negative flag never set for decimal mode. That's a simplification, see http://www.6502.org/tutorials/decimal_mode.html
+        clearoverflow();  // overflow never set for decimal mode.
         result = result & 0xff;
-// end of BCD fix PART 3 (final part)
+        // end of BCD fix PART 3 (final part)
 
         clockticks6502++;
     }
-//    #endif // of NES_CPU
+    //    #endif // of NES_CPU
 
     saveaccum(result);
 }
@@ -2446,7 +2561,6 @@ void rra()
 #define rra nop
 #endif
 
-
 void nmi6502()
 {
     push16(pc);
@@ -2462,28 +2576,28 @@ void irq6502()
     push8(cpustatus);
     cpustatus |= FLAG_INTERRUPT;
     pc = (uint16_t)read6502(0xFFFE) | ((uint16_t)read6502(0xFFFF) << 8);
-//	pc = 0x1C1F;
+    //	pc = 0x1C1F;
 }
 
 #ifdef USE_TIMING
 prog_char ticktable[256] PROGMEM = {
     /*        |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  A  |  B  |  C  |  D  |  E  |  F  |     */
-    /* 0 */      7,    6,    2,    8,    3,    3,    5,    5,    3,    2,    2,    2,    4,    4,    6,    6,  /* 0 */
-    /* 1 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 1 */
-    /* 2 */      6,    6,    2,    8,    3,    3,    5,    5,    4,    2,    2,    2,    4,    4,    6,    6,  /* 2 */
-    /* 3 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 3 */
-    /* 4 */      6,    6,    2,    8,    3,    3,    5,    5,    3,    2,    2,    2,    3,    4,    6,    6,  /* 4 */
-    /* 5 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 5 */
-    /* 6 */      6,    6,    2,    8,    3,    3,    5,    5,    4,    2,    2,    2,    5,    4,    6,    6,  /* 6 */
-    /* 7 */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* 7 */
-    /* 8 */      2,    6,    2,    6,    3,    3,    3,    3,    2,    2,    2,    2,    4,    4,    4,    4,  /* 8 */
-    /* 9 */      2,    6,    2,    6,    4,    4,    4,    4,    2,    5,    2,    5,    5,    5,    5,    5,  /* 9 */
-    /* A */      2,    6,    2,    6,    3,    3,    3,    3,    2,    2,    2,    2,    4,    4,    4,    4,  /* A */
-    /* B */      2,    5,    2,    5,    4,    4,    4,    4,    2,    4,    2,    4,    4,    4,    4,    4,  /* B */
-    /* C */      2,    6,    2,    8,    3,    3,    5,    5,    2,    2,    2,    2,    4,    4,    6,    6,  /* C */
-    /* D */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7,  /* D */
-    /* E */      2,    6,    2,    8,    3,    3,    5,    5,    2,    2,    2,    2,    4,    4,    6,    6,  /* E */
-    /* F */      2,    5,    2,    8,    4,    4,    6,    6,    2,    4,    2,    7,    4,    4,    7,    7   /* F */
+    /* 0 */ 7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, /* 0 */
+    /* 1 */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, /* 1 */
+    /* 2 */ 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, /* 2 */
+    /* 3 */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, /* 3 */
+    /* 4 */ 6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, /* 4 */
+    /* 5 */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, /* 5 */
+    /* 6 */ 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6, /* 6 */
+    /* 7 */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, /* 7 */
+    /* 8 */ 2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, /* 8 */
+    /* 9 */ 2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5, /* 9 */
+    /* A */ 2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, /* A */
+    /* B */ 2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, /* B */
+    /* C */ 2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, /* C */
+    /* D */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, /* D */
+    /* E */ 2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, /* E */
+    /* F */ 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7  /* F */
 };
 #endif
 
@@ -2492,23 +2606,25 @@ void exec6502(int32_t tickcount)
 #ifdef USE_TIMING
     clockgoal6502 += tickcount;
 
-    while (clockgoal6502 > 0) {
+    while (clockgoal6502 > 0)
+    {
 #else
-    while (tickcount--) {
+    while (tickcount--)
+    {
 #endif
 
-
-// part 1 of single stepping using NMI
+        // part 1 of single stepping using NMI
         if ((SSTmode == 1) & (pc < 0x1C00)) // no mni if running ROM code (K7), that would also single-step the monitor code!
-            nmiFlag = 1; // handled after this instruction has completed.
-// -------------
+            nmiFlag = 1;                    // handled after this instruction has completed.
+                                            // -------------
 
         opcode = read6502(pc++);
         cpustatus |= FLAG_CONSTANT;
 
         useaccum = 0;
 
-        switch (opcode) {
+        switch (opcode)
+        {
         case 0x0:
             imp();
             brk();
@@ -3121,7 +3237,8 @@ void exec6502(int32_t tickcount)
         instructions++;
 
         // part 2 of NMI single-step handling for KIM-I
-        if (nmiFlag == 1) { //SST switch on and not in K7 area (ie, ROM002), so single step
+        if (nmiFlag == 1)
+        {              //SST switch on and not in K7 area (ie, ROM002), so single step
             nmi6502(); // set up for NMI
             nmiFlag = 0;
         }
@@ -3131,10 +3248,10 @@ void exec6502(int32_t tickcount)
 
 uint16_t getpc()
 {
-    return(pc);
+    return (pc);
 }
 
 uint8_t getop()
 {
-    return(opcode);
+    return (opcode);
 }

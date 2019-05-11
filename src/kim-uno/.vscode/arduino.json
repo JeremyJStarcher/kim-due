@@ -1,5 +1,5 @@
 {
-    "sketch": "kimuno.ino",
+    "sketch": "kim-uno.ino",
     "board": "arduino:sam:arduino_due_x_dbg",
     "port": "/dev/ttyUSB0"
 }
