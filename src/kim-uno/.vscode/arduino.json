@@ -1,5 +1,5 @@
 {
-    "sketch": "kim-uno.ino",
-    "board": "arduino:avr:pro",
-    "configuration": "cpu=16MHzatmega328"
+    "sketch": "kimuno.ino",
+    "board": "arduino:sam:arduino_due_x_dbg",
+    "port": "/dev/ttyUSB0"
 }
