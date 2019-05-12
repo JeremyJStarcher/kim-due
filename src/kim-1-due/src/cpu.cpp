@@ -33,7 +33,6 @@ extern void clearkey(void);
 extern void driveLEDs();
 extern void scanKeys();
 
-
 uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
 uint8_t iii;                   // counter for various purposes, declared here to avoid in-function delay in 6502 functions.
 uint8_t nmiFlag = 0;           // added by OV to aid single-stepping SST mode on KIM-I

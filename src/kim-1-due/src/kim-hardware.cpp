@@ -52,7 +52,6 @@ byte dig[19] = {
     0b00000000  //i printed as <space>
 };
 
-
 // ---------- called from cpu.c ----------------------
 
 void serout(uint8_t val)
