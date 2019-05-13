@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define BYTES_PER_LINE 12
 #define BUFFER_SIZE 64 * 1024
 int hexToInt(char s[]);
 
@@ -53,9 +54,10 @@ int main(int argc, char *argv[])
             fprintf(ofp, ", ");
         }
 
-        if (ctr % 12 == 0)
+        if (ctr % BYTES_PER_LINE == 0)
         {
-            fprintf(ofp, "\n    ");
+            fprintf(ofp, "  // %04X - %04X\n",
+                    ((int)i - BYTES_PER_LINE), (int)i-1);
         }
         ctr++;
 
