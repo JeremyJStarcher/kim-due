@@ -2,7 +2,8 @@
 all:	kim.c
 
 kim.c: kim.bin Makefile
-	../tools/rom2c kim.bin ./rom02.c rom02
+	../tools/rom2c kim.bin ./cassette.c cassette 0000 03FF
+	../tools/rom2c kim.bin ./monitor.c monitor 0400 0800
 
 kim.ptp: kim.bin Makefile
 	srec_cat kim.bin -binary -offset 0x1800 -o kim.ptp -MOS_Technologies
