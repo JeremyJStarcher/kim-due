@@ -1,4 +1,8 @@
-all:	kim.ptp
+#all:	kim.ptp
+all:	kim.c
+
+kim.c: kim.bin Makefile
+	../tools/rom2c kim.bin ./rom02.c rom02
 
 kim.ptp: kim.bin Makefile
 	srec_cat kim.bin -binary -offset 0x1800 -o kim.ptp -MOS_Technologies
@@ -10,6 +14,6 @@ kim.o:	kim.s
 	ca65 -g -l kim.lst --feature labels_without_colons kim.s
 
 clean:
-	$(RM) *.o *.lst *.map *.bin *.ptp
+	$(RM) *.o *.lst *.map *.bin *.ptp *.c
 
 distclean: clean
