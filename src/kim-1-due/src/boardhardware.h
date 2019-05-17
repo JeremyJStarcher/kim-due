@@ -15,6 +15,12 @@
 #define BOARD_LED_I2C true
 #define BOARD_WIRED_LED false
 
+#if BOARD_LED_I2C
+#define LED_I2C_DATA 16
+#define LED_I2C_CLK 14
+#define LED_I2C_CS 15
+#endif
+
 extern byte aCols[8];
 extern byte aRows[3];
 

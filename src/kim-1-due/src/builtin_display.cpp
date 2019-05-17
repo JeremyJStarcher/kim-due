@@ -15,7 +15,6 @@ Now we need a LedControl to work with.
  But the maximum default of 8 MAX72XX wil also work.
  */
 const int delaytime = 150;
-LedControl lc = LedControl(16, 14, 15, 2);
 
 byte dig[19] = {
     // bits     6543210
@@ -42,9 +41,10 @@ byte dig[19] = {
 };
 
 #if BOARD_LED_I2C
+LedControl lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
 void init_display()
 {
-    lc = LedControl(16, 14, 15, 2);
+    lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
 
     int devices = lc.getDeviceCount();
     for (int address = 0; address < devices; address++)
