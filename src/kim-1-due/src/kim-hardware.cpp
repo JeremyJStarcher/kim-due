@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#ifdef USE_EPROM
-#include <EEPROM.h>
-#endif
-
 #include "builtin_display.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "boardhardware.h"
+
+#ifdef USE_EPROM
+#include <EEPROM.h>
+#endif
 
 uint8_t enterflt(uint8_t reg);
 uint8_t showflt(uint8_t reg);
