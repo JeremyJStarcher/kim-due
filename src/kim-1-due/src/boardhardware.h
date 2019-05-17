@@ -12,6 +12,9 @@
 #define USE_EPROM
 #endif
 
+#define BOARD_LED_I2C true
+#define BOARD_WIRED_LED false
+
 extern byte aCols[8];
 extern byte aRows[3];
 

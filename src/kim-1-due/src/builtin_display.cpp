@@ -41,55 +41,47 @@ byte dig[19] = {
     0b00000000  //i printed as <space>
 };
 
+#if BOARD_LED_I2C
 void init_display()
 {
     lc = LedControl(16, 14, 15, 2);
 
-    //we have already set the number of devices when we created the LedControl
     int devices = lc.getDeviceCount();
-    //we have to init all devices inMenu: a loop
     for (int address = 0; address < devices; address++)
     {
         /*The MAX72XX is in power-saving mode on startup*/
         lc.shutdown(address, false);
-        /* Set the brightness to a medium values */
-        lc.setIntensity(address, 1);
-        /* and clear the display */
+        lc.setIntensity(address, 8);
         lc.clearDisplay(address);
     }
 
-    lc.setChar(0, 7, 'a', false);
-    delay(delaytime);
+    byte logo[]{
+        0b01110111, // A
+        0b00000101, // r
+        0b00111101, // d
+        0b00011100, // u
+        0b00010000, // i
+        0b00010101, // n
+        0b00011101  // o
+        };
 
-    lc.setRow(0, 6, 0x05);
-    delay(delaytime);
-
-    lc.setChar(0, 5, 'd', false);
-    delay(delaytime);
-
-    lc.setRow(0, 4, 0x1c);
-    delay(delaytime);
-
-    lc.setRow(0, 3, B00010000);
-    delay(delaytime);
-
-    lc.setRow(0, 2, 0x15);
-    delay(delaytime);
-
-    lc.setRow(0, 1, 0x1D);
-    delay(delaytime);
+    int l = 7;
+    for (int i = 0; i < l; i++)
+    {
+        lc.setRow(0, l - i, logo[i]);
+        delay(delaytime);
+    }
 
     lc.clearDisplay(0);
     delay(delaytime);
 
-    for (int i = 0; i < sizeof dig / sizeof dig[0]; i++)
+    for (size_t i = 0; i < sizeof dig / sizeof dig[0]; i++)
     {
         lc.setRow(0, 0, dig[i]);
         delay(delaytime);
     }
 }
 
-#if 1
 void driveLEDs()
 {
     int ledNo;
@@ -115,7 +107,11 @@ void driveLEDs()
 }
 #endif
 
-#if 0
+#if BOARD_WIRED_LED
+void init_display() {
+
+}
+
 void driveLEDs()
 {
     int led, col, ledNo, currentBit, bitOn;
