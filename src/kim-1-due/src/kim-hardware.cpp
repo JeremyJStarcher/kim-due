@@ -240,7 +240,7 @@ void setupUno()
 
 void driveCalcLEDs(uint8_t *numberStr, uint8_t decpt)
 {
-    #if false
+#if false
     uint8_t led, col, currentBit, bitOn;
     uint8_t digit;
 
@@ -266,7 +266,7 @@ void driveCalcLEDs(uint8_t *numberStr, uint8_t decpt)
         delay(2);
         digitalWrite(ledSelect7[digit], LOW); // unLight this LED
     }
-    #endif
+#endif
 } // end of function
 //} // end of C segment
 
