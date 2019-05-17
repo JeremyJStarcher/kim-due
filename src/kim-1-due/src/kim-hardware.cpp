@@ -378,6 +378,8 @@ void scanKeys()
     // 2. perform scanning
     noKeysScanned = 0;
 
+#define DEBUG_KEYBOARD
+
     for (row = 0; row < 3; row++)
     {
         digitalWrite(aRows[row], LOW); // activate this row
@@ -388,14 +390,28 @@ void scanKeys()
                 keyCode = col + row * 8 + 1;
                 if (keyCode != prevKey)
                 {
-                    //Serial.println();
-                    //Serial.print(" col: ");  Serial.print(col, DEC);
-                    //Serial.print(" row: ");  Serial.print(row, DEC);
-                    //Serial.print(" prevKey: ");  Serial.print(prevKey, DEC);
-                    //Serial.print(" KeyCode: ");  Serial.println(keyCode, DEC);
+#ifdef DEBUG_KEYBOARD
+                    {
+                        Serial.println();
+                        Serial.print(" col: ");
+                        Serial.print(col, DEC);
+                        Serial.print(" row: ");
+                        Serial.print(row, DEC);
+                        Serial.print(" prevKey: ");
+                        Serial.print(prevKey, DEC);
+                        Serial.print(" KeyCode: ");
+                        Serial.println(keyCode, DEC);
+                    }
+#endif
+
                     prevKey = keyCode;
                     curkey = parseChar(keyCode);
-                    //Serial.print(" curkey: ");  Serial.print(curkey, DEC);
+
+#ifdef DEBUG_KEYBOARD
+                    Serial.print(" curkey: ");
+                    Serial.print(curkey, DEC);
+#endif
+
                     timeFirstPressed = millis(); //
                 }
                 else
