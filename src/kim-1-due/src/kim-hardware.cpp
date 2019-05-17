@@ -5,6 +5,7 @@
 #include <EEPROM.h>
 #endif
 
+#include "builtin_display.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "boardhardware.h"
@@ -22,35 +23,6 @@ int blitzMode = 1;         // microchess status variable. 1 speeds up chess move
 uint8_t keyboardMode = 0;  // start with keyboard in KIM-1 mode. 1: calculator mode
 
 char threeHex[3][2]; // LED display
-
-byte aCols[8] = {A5, 2, 3, 4, 5, 6, 7, 8}; // note col A5 is the extra one linked to DP
-byte aRows[3] = {9, 10, 11};
-byte ledSelect[8] = {12, 13, A0, A1, A2, A3, A7, A4};  // note that A6 and A7 are not used at present. Can delete them.
-byte ledSelect7[8] = {12, 13, A0, A1, A4, A2, A3, A7}; // note that A6 and A7 are not used at present. Can delete them.
-
-byte dig[19] = {
-    // bits     6543210
-    // digits   abcdefg
-    0b01111110, //0
-    0b00110000, //1
-    0b01101101, //2
-    0b01111001, //3
-    0b00110011, //4
-    0b01011011, //5
-    0b01011111, //6
-    0b01110000, //7
-    0b01111111, //8
-    0b01111011, //9
-    0b01110111, //a
-    0b00011111, //b
-    0b01001110, //c
-    0b00111101, //d
-    0b01001111, //e
-    0b01000111, //f
-    0b00000001, //g printed as -
-    0b00001000, //h printed as _
-    0b00000000  //i printed as <space>
-};
 
 // ---------- called from cpu.c ----------------------
 
@@ -266,41 +238,9 @@ void setupUno()
     Serial.println(F("KIM-UNO initialized."));
 }
 
-void driveLEDs()
-{
-    int led, col, ledNo, currentBit, bitOn;
-    int byt, i;
-
-    // 1. initialse for driving the 6 (now 8) 7segment LEDs
-    // ledSelect pins drive common anode for [all segments] in [one of 6 LEDs]
-    for (led = 0; led < 7; led++)
-    {
-        pinMode(ledSelect[led], OUTPUT);   // set led pins to output
-        digitalWrite(ledSelect[led], LOW); // LOW = not lit
-    }
-    // 2. switch column pins to output mode
-    // column pins are the cathode for the LED segments
-    // lame code to cycle through the 3 bytes of 2 digits each = 6 leds
-    for (byt = 0; byt < 3; byt++)
-        for (i = 0; i < 2; i++)
-        {
-            ledNo = byt * 2 + i;
-            for (col = 0; col < 8; col++)
-            {
-                pinMode(aCols[col], OUTPUT); // set pin to output
-                //currentBit = (1<<(6-col));             // isolate the current bit in loop
-                currentBit = (1 << (7 - col)); // isolate the current bit in loop
-                bitOn = (currentBit & dig[(int)threeHex[byt][i]]) == 0;
-                digitalWrite(aCols[col], bitOn); // set the bit
-            }
-            digitalWrite(ledSelect[ledNo], HIGH); // Light this LED
-            delay(2);
-            digitalWrite(ledSelect[ledNo], LOW); // unLight this LED
-        }
-} // end of function
-
 void driveCalcLEDs(uint8_t *numberStr, uint8_t decpt)
 {
+    #if false
     uint8_t led, col, currentBit, bitOn;
     uint8_t digit;
 
@@ -326,6 +266,7 @@ void driveCalcLEDs(uint8_t *numberStr, uint8_t decpt)
         delay(2);
         digitalWrite(ledSelect7[digit], LOW); // unLight this LED
     }
+    #endif
 } // end of function
 //} // end of C segment
 

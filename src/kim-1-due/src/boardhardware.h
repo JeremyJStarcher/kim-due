@@ -12,4 +12,10 @@
 #define USE_EPROM
 #endif
 
+extern byte aCols[8];
+extern byte aRows[3];
+
+extern byte ledSelect[8];
+extern byte ledSelect7[8];
+
 #endif

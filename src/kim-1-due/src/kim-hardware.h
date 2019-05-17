@@ -9,6 +9,7 @@ void interpretkeys(void);
 uint8_t xkeyPressed(void);
 
 extern uint8_t curkey;
+extern char threeHex[3][2]; // LED display
 
 #endif
 
