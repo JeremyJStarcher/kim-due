@@ -1,9 +1,12 @@
 #include <Arduino.h>
+
 #include "cpu.h"
+#include "lcd.h";
 #include "kim-hardware.h"
 
 void setup()
 {
+
     Serial.begin(9600);
     Serial.println();
 
@@ -15,6 +18,8 @@ void setup()
 
     Serial.print(F("V2019-05-12 FREEMEM=")); // just a little check, to avoid running out of RAM!
     Serial.println(freeRam());
+
+    init_lcd();
 }
 
 void loop()
