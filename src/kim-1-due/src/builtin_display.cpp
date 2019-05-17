@@ -29,7 +29,7 @@ void init_display()
         /*The MAX72XX is in power-saving mode on startup*/
         lc.shutdown(address, false);
         /* Set the brightness to a medium values */
-        lc.setIntensity(address, 8);
+        lc.setIntensity(address, 1);
         /* and clear the display */
         lc.clearDisplay(address);
     }
@@ -91,18 +91,21 @@ void driveLEDs()
     int ledNo;
     int byt, i;
     int out;
-    int xlate[] = {7, 6, 5, 4, 2, 1};
+    static int xlate[] = {7, 6, 5, 4, 2, 1};
+    static char lastThreeHex[] = {0xF, 0xF, 0xF, 0xF, 0xF, 0xF};
 
-    // 2. switch column pins to output mode
-    // column pins are the cathode for the LED segments
-    // lame code to cycle through the 3 bytes of 2 digits each = 6 leds
     for (byt = 0; byt < 3; byt++)
     {
         for (i = 0; i < 2; i++)
         {
             ledNo = byt * 2 + i;
-            out = dig[(int)threeHex[byt][i]];
-            lc.setRow(0, xlate[ledNo], out);
+            char bcd = threeHex[byt][i];
+            if (bcd != lastThreeHex[ledNo])
+            {
+                out = dig[(int)threeHex[byt][i]];
+                lc.setRow(0, xlate[ledNo], out);
+                lastThreeHex[ledNo] = bcd;
+            }
         }
     }
 }
