@@ -15,10 +15,11 @@ Now we need a LedControl to work with.
  But the maximum default of 8 MAX72XX wil also work.
  */
 const int delaytime = 150;
+LedControl lc = LedControl(74, 76, 7, 2);
 
 void init_display()
 {
-    LedControl lc = LedControl(74, 76, 7, 2);
+    lc = LedControl(16, 14, 15, 2);
 
     //we have already set the number of devices when we created the LedControl
     int devices = lc.getDeviceCount();
@@ -54,7 +55,9 @@ void init_display()
     lc.setRow(0, 1, 0x1D);
     delay(delaytime);
 
+    ;
     lc.clearDisplay(0);
+    ;
     delay(delaytime);
 }
 
@@ -83,6 +86,29 @@ byte dig[19] = {
 };
 
 #if 1
+void driveLEDs()
+{
+    int ledNo;
+    int byt, i;
+    int out;
+    int xlate[] = {7, 6, 5, 4, 2, 1};
+
+    // 2. switch column pins to output mode
+    // column pins are the cathode for the LED segments
+    // lame code to cycle through the 3 bytes of 2 digits each = 6 leds
+    for (byt = 0; byt < 3; byt++)
+    {
+        for (i = 0; i < 2; i++)
+        {
+            ledNo = byt * 2 + i;
+            out = dig[(int)threeHex[byt][i]];
+            lc.setRow(0, xlate[ledNo], out);
+        }
+    }
+}
+#endif
+
+#if 0
 void driveLEDs()
 {
     int led, col, ledNo, currentBit, bitOn;

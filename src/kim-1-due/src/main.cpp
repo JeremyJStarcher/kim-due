@@ -6,7 +6,6 @@
 
 void setup()
 {
-
     Serial.begin(9600);
     Serial.println();
 
@@ -33,6 +32,8 @@ void loop()
     }
 
     scanKeys();
-    if (xkeyPressed() != 0) //KIM Uno board input?
+    if (xkeyPressed() != 0)
+    { //KIM Uno board input?
         interpretkeys();
+    }
 }
