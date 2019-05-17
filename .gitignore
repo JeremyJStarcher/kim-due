@@ -6,4 +6,6 @@
 .vscode/launch.json
 .vscode/ipch/**
 src/kim-1-due/.vscode
+src/kim-1-due/src/.vscode/
+
 
