@@ -63,7 +63,7 @@ void init_display()
         0b00010000, // i
         0b00010101, // n
         0b00011101  // o
-        };
+    };
 
     int l = 7;
     for (int i = 0; i < l; i++)
@@ -108,8 +108,8 @@ void driveLEDs()
 #endif
 
 #if BOARD_WIRED_LED
-void init_display() {
-
+void init_display()
+{
 }
 
 void driveLEDs()
