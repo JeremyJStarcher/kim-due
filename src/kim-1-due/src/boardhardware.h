@@ -16,9 +16,9 @@
 #define BOARD_WIRED_LED false
 
 #if BOARD_LED_I2C
-#define LED_I2C_DATA 16
-#define LED_I2C_CLK 14
-#define LED_I2C_CS 15
+#define LED_I2C_DATA A3
+#define LED_I2C_CLK A5
+#define LED_I2C_CS A4
 #endif
 
 extern byte aCols[8];
