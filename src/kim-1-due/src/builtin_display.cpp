@@ -5,15 +5,6 @@
 #include "kim-hardware.h"
 #include "boardhardware.h"
 
-/*
-Now we need a LedControl to work with.
- ***** These pin numbers will probably not work with your hardware *****
- pin 12 is connected to the DataIn
- pin 11 is connected to the CLK
- pin 10 is connected to LOAD
- ***** Please set the number of devices you have *****
- But the maximum default of 8 MAX72XX wil also work.
- */
 const int delaytime = 150;
 
 byte dig[19] = {
