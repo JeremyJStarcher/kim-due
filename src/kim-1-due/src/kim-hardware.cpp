@@ -378,7 +378,7 @@ void scanKeys()
     // 2. perform scanning
     noKeysScanned = 0;
 
-#define DEBUG_KEYBOARD
+// #define DEBUG_KEYBOARD
 
     for (row = 0; row < 3; row++)
     {

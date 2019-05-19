@@ -64,6 +64,8 @@ void init_display()
     }
 
     lc.clearDisplay(0);
+
+#if 0
     delay(delaytime);
 
     for (size_t i = 0; i < sizeof dig / sizeof dig[0]; i++)
@@ -71,6 +73,7 @@ void init_display()
         lc.setRow(0, 0, dig[i]);
         delay(delaytime);
     }
+#endif
 }
 
 void driveLEDs()
