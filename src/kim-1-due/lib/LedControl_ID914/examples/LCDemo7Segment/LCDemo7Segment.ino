@@ -59,7 +59,6 @@ void scrollDigits() {
 
     lc.setDigit(0,4,i,false);
 
-
     lc.setDigit(0,3,i,false);
     lc.setDigit(0,2,i+1,false);
     lc.setDigit(0,1,i+2,false);

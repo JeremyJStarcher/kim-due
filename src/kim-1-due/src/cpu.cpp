@@ -1076,6 +1076,7 @@ uint8_t read6502(uint16_t address)
             }
             serout('<');
             serout(13);
+
             driveLEDs();
 
             pc = 0x1F45;   // skip subroutine part that deals with LEDs
