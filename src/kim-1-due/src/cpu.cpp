@@ -1305,8 +1305,8 @@ uint8_t read6502(uint16_t address)
         return (pgm_read_byte_near(monitor + address - 0xFC00));
     }
 
-    serout('%');
-    serout('9');
+    //serout('%');
+    //serout('9');
 
     // This should never be reached unless some addressing bug, so return 6502 BRK
     return (0);
