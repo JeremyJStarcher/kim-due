@@ -5,11 +5,11 @@
 #endif
 
 #if defined(__avr_atmega328p__)
-#define CALC_RAM_SIZE
 #endif
 
 #if defined(__AVR__)
 #define USE_EPROM
+#define CALC_RAM_SIZE
 #endif
 
 #define BOARD_LED_I2C true
