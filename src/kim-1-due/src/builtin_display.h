@@ -2,5 +2,6 @@
 #define BUILTIN_DISPLAY_H
 
 void init_display(void);
+void clear_display(void);
 
 #endif

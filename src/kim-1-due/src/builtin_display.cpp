@@ -33,6 +33,9 @@ byte dig[19] = {
 
 #if BOARD_LED_I2C
 LedControl lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
+
+static int t_8_6[] = {7, 6, 5, 4, 2, 1};
+
 void init_display()
 {
     lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
@@ -81,8 +84,6 @@ void driveLEDs()
     int ledNo;
     int byt, i;
     int out;
-    static int xlate[] = {7, 6, 5, 4, 2, 1};
-    static char lastThreeHex[] = {0xF, 0xF, 0xF, 0xF, 0xF, 0xF};
 
     for (byt = 0; byt < 3; byt++)
     {
@@ -90,15 +91,27 @@ void driveLEDs()
         {
             ledNo = byt * 2 + i;
             char bcd = threeHex[byt][i];
-            if (bcd != lastThreeHex[ledNo])
-            {
-                out = dig[(int)threeHex[byt][i]];
-                lc.setRow(0, xlate[ledNo], out);
-                lastThreeHex[ledNo] = bcd;
-            }
+            out = dig[(int)threeHex[byt][i]];
+            lc.setRow(0, t_8_6[ledNo], out);
         }
     }
 }
+
+void clear_display()
+{
+    int ledNo;
+    int byt, i;
+
+    for (byt = 0; byt < 3; byt++)
+    {
+        for (i = 0; i < 2; i++)
+        {
+            ledNo = byt * 2 + i;
+            lc.setRow(0, t_8_6[ledNo], 0);
+        }
+    }
+}
+
 #endif
 
 #if BOARD_WIRED_LED
@@ -138,4 +151,8 @@ void driveLEDs()
             digitalWrite(ledSelect[ledNo], LOW); // unLight this LED
         }
 } // end of function
+
+void clear_display()
+{
+}
 #endif
