@@ -1058,24 +1058,34 @@ uint8_t read6502(uint16_t address)
         if (address == 0x1F1F)
         { // intercept SCANDS (display F9,FA,FB)
             // light LEDs ---------------------------------------------------------
-            threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
-            threeHex[0][1] = RAM[0x00FB] & 0xF;
-            threeHex[1][0] = (RAM[0x00FA] & 0xF0) >> 4;
-            threeHex[1][1] = RAM[0x00FA] & 0xF;
-            threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
-            threeHex[2][1] = RAM[0x00F9] & 0xF;
-
-            serout(13);
-            serout('>');
-            for (iii = 0; iii < 3; iii++)
+            if (
+                threeHex[0][0] != (RAM[0x00FB] & 0xF0) >> 4 ||
+                threeHex[0][1] != (RAM[0x00FB] & 0xF) ||
+                threeHex[1][0] != (RAM[0x00FA] & 0xF0) >> 4 ||
+                threeHex[1][1] != (RAM[0x00FA] & 0xF) ||
+                threeHex[2][0] != (RAM[0x00F9] & 0xF0) >> 4 ||
+                threeHex[2][1] != (RAM[0x00F9] & 0xF))
             {
-                serouthex(threeHex[iii][0]);
-                serouthex(threeHex[iii][1]);
-                if (iii != 2)
-                    serout(' ');
+
+                threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
+                threeHex[0][1] = RAM[0x00FB] & 0xF;
+                threeHex[1][0] = (RAM[0x00FA] & 0xF0) >> 4;
+                threeHex[1][1] = RAM[0x00FA] & 0xF;
+                threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
+                threeHex[2][1] = RAM[0x00F9] & 0xF;
+
+                serout(13);
+                serout('>');
+                for (iii = 0; iii < 3; iii++)
+                {
+                    serouthex(threeHex[iii][0]);
+                    serouthex(threeHex[iii][1]);
+                    if (iii != 2)
+                        serout(' ');
+                }
+                serout('<');
+                serout(13);
             }
-            serout('<');
-            serout(13);
 
             driveLEDs();
 
