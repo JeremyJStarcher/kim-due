@@ -1380,6 +1380,18 @@ void write6502(uint16_t address, uint8_t value)
         switch (address)
         {
         case aIoPAD:
+
+            /*
+            * ioPDB set to         drives digit
+            * ------------         ------------
+            * xxx1001x               0 (leftmost)
+            * xxx1010x               1
+            * xxx1011x               2
+            * xxx1100x               3
+            * xxx1101x               4
+            * xxx1110x               5 (rightmost)
+            * */
+
             ioPAD = value;
             led = (ioPDB - 9) >> 1;
             code = ioPAD & ioPADD;
