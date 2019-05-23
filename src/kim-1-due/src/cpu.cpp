@@ -14,6 +14,7 @@
 #include "roms/monitor.h"
 #include "cpu.h"
 #include "boardhardware.h"
+#include "builtin_display.h"
 
 #ifdef USE_EPROM
 extern uint8_t eepromread(uint16_t eepromaddress);
@@ -32,7 +33,6 @@ extern void serouthex(uint8_t val);
 extern uint8_t getAkey(void); // for serial port get normal ASCII keys
 extern uint8_t getKIMkey();   // for emulation of KIM keypad
 extern void clearkey(void);
-extern void driveLEDs();
 extern void scanKeys();
 
 uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
@@ -158,8 +158,8 @@ uint8_t getRegister(uint8_t reg, char *inVal)
                 ((RAM[3 + offset] & 0xF0) >> 4) + (uint8_t)48, (RAM[3 + offset] & 0x0F) + (uint8_t)48,
                 // exponent sign
                 (RAM[0 + offset] & (uint8_t)64) == 0 ? (uint8_t)62 : (uint8_t)64, // E, or G is printed as -
-                // exponent
-                /*!!!*/ //(RAM[0+offset]&0x0F) + (uint8_t)48,
+                                                                                  // exponent
+                /*!!!*/                                                           //(RAM[0+offset]&0x0F) + (uint8_t)48,
                     ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
                 (RAM[1 + offset] & 0x0F) + (uint8_t)48);
         return 0; // light dec point on first digit
@@ -1006,23 +1006,35 @@ uint8_t read6502(uint16_t address)
         return (0);
     }
     if (address < 0x1780)
-    { // 0x1740-0x1780 is IO space of RIOT 002
+    {
+        // 0x1740-0x1780 is IO space of RIOT 002
         if (address == 0x1747)
-            return (0xFF); // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
+        {
+            // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
+            return (0xFF);
+        }
+
         if (address == 0x1740)
-            return (useKeyboardLed); // returns 1 for Keyboard/LED or 0 for Serial terminal
+        {
+            // returns 1 for Keyboard/LED or 0 for Serial terminal
+            return (useKeyboardLed);
+        }
+
         serout('%');
         serout('6'); // trap code 6 - read in I/O 002
         return (0);
     }
+
     if (address < 0x17C0)
     { // 0x1780-0x17C0 is RAM from RIOT 003
         return (RAM003[address - 0x1780]);
     }
+
     if (address < 0x1800)
     { // 0x17C0-0x1800 is RAM from RIOT 002
         return (RAM002[address - 0x17C0]);
     }
+
     if (address < 0x1C00)
     { // 0x1800-0x1C00 is ROM 003
         return (pgm_read_byte_near(cassette + address - 0x1800));
@@ -1087,10 +1099,10 @@ uint8_t read6502(uint16_t address)
                 serout(13);
             }
 
-            driveLEDs();
+            // driveLEDs();
 
-            pc = 0x1F45;   // skip subroutine part that deals with LEDs
-            return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
+            //pc = 0x1F45;   // skip subroutine part that deals with LEDs
+            //return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
         }
         if (address == 0x1EFE)
         {                  // intercept AK (check for any key pressed)
@@ -1258,7 +1270,7 @@ uint8_t read6502(uint16_t address)
             if (blitzMode == 1) // This is the Blitz mode hack from the microchess manual.
                 return ((uint8_t)0x00);
 
-       // return (pgm_read_byte_near(mchess + address - 0xC000)); // mchess ROM
+        // return (pgm_read_byte_near(mchess + address - 0xC000)); // mchess ROM
     }
     // I/O functions just for Microchess: ---------------------------------------------------
     // $F003: 0 = no key pressed, 1 key pressed
@@ -1295,7 +1307,6 @@ uint8_t read6502(uint16_t address)
     }
     if (address == 0xCFF3)
     {
-
         // simulated keyboard input 0=no key press, 1 = key press light LEDs
 
         threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
@@ -1304,7 +1315,7 @@ uint8_t read6502(uint16_t address)
         threeHex[1][1] = RAM[0x00FA] & 0xF;
         threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
         threeHex[2][1] = RAM[0x00F9] & 0xF;
-        driveLEDs();
+        // driveLEDs();
 
         return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
     }
@@ -1350,11 +1361,74 @@ void write6502(uint16_t address, uint8_t value)
         serout('3'); // trap code 3 - io3 access
         return;
     }
+
     if (address < 0x1780)
-    {   // I/O 002
-        //    serout('%');  serout('2');      // trap code 2 - io2 access
-        return;
+    {
+
+#define aIoPAD 0x1740
+#define aIoPADD 0x1741
+#define aIoPBD 0x1742
+#define aIoPBDD 0x1743
+
+        static uint8_t ioPAD;  // Port A data register
+        static uint8_t ioPADD; // Port A data direction register
+        static uint8_t ioPDB;  // port B data register
+        static uint8_t ioPBDD; // Port B data direction register
+        uint8_t led;
+        uint8_t code;
+
+        switch (address)
+        {
+        case aIoPAD:
+            ioPAD = value;
+            led = (ioPDB - 9) >> 1;
+            code = ioPAD & ioPADD;
+            driveLED(led, code);
+            break;
+        case aIoPADD:
+            ioPADD = value;
+            break;
+        case aIoPBD:
+            ioPDB = value & ioPBDD;
+            break;
+        case aIoPBDD:
+            ioPBDD = value;
+            break;
+        default:
+            break;
+        }
+
+        if (
+            address == aIoPAD /* ||
+        address == aIoPADD ||
+        address == aIoPBD ||
+        address == aIoPBDD
+        */
+        )
+        {
+            char tmp[50];
+
+            // Serial.print((ioPDB - 9) >> 1);
+            // Serial.print("  ");
+            // Serial.println(ioPAD & ioPADD);
+
+            if (false)
+            {
+                Serial.print("Address ");
+                sprintf(tmp, "0x%.4X", address);
+                Serial.print(tmp);
+
+                Serial.print(":");
+                sprintf(tmp, "0x%.2X", value);
+                Serial.println(tmp);
+            }
+
+            // I/O 002
+            //    serout('%');  serout('2');      // trap code 2 - io2 access
+            return;
+        }
     }
+
     if (address < 0x17C0)
     { // RAM 003
         RAM003[address - 0x1780] = value;
@@ -1367,7 +1441,7 @@ void write6502(uint16_t address, uint8_t value)
     }
 
     if ((address >= 0x5000) && (address <= 0x6FDF))
-    {   // illegal write in fltpt65 ROM
+    { // illegal write in fltpt65 ROM
         //	  printf("WARNING: WRITE TO ROM\n");
         serout('%');
         serout('a');

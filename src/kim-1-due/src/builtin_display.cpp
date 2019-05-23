@@ -91,10 +91,15 @@ void driveLEDs()
         {
             ledNo = byt * 2 + i;
             char bcd = threeHex[byt][i];
-            out = dig[(int)threeHex[byt][i]];
+            out = dig[(int)bcd];
             lc.setRow(0, t_8_6[ledNo], out);
         }
     }
+}
+
+void driveLED(uint8_t led, uint8_t code)
+{
+    lc.setRow(0, led, code);
 }
 
 void clear_display()
