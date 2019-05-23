@@ -2,6 +2,7 @@
 #define BOARDHARDWARE_H
 
 #if defined(__arm__)
+#define ONBOARD_RAM 0x04FF
 #endif
 
 #if defined(__avr_atmega328p__)
@@ -10,6 +11,7 @@
 #if defined(__AVR__)
 #define USE_EPROM
 #define CALC_RAM_SIZE
+#define ONBOARD_RAM 1024
 #endif
 
 #define BOARD_LED_I2C true
@@ -26,5 +28,6 @@ extern byte aRows[3];
 
 extern byte ledSelect[8];
 extern byte ledSelect7[8];
+
 
 #endif

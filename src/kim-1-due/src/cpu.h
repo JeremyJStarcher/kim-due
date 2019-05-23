@@ -2,7 +2,7 @@
 #define CPU_INCLUDE_H
 
 #include "Arduino.h"
-#define ONBOARD_RAM 1024
+#include "boardhardware.h"
 
 uint16_t getpc();
 uint8_t getop();
