@@ -97,9 +97,34 @@ void driveLEDs()
     }
 }
 
-void driveLED(uint8_t led, uint8_t code)
+void driveLED(uint8_t led, uint8_t n)
 {
-    lc.setRow(0, led, code);
+    // --- LED VERSION ---
+    //      .::::-  (6)
+    // (1)  :    :  (5)
+    //      .::::.  (0)
+    // (2)  :    :  (4)
+    //      .::::-  (3)
+
+    // --- KIM VERSION ---
+    //      .::::-  (0)
+    // (5)  :    :  (1)
+    //      .::::.  (6)
+    // (4)  :    :  (2)
+    //      .::::-  (3)
+
+    int shift;
+    uint8_t result = 0;
+
+    for (shift = 0; shift < 8; shift++) {
+        result <<= 1;
+        result |= n & 1;
+        n >>= 1;
+    }
+
+    result >>= 1;
+
+    lc.setRow(0, t_8_6[led], result);
 }
 
 void clear_display()
