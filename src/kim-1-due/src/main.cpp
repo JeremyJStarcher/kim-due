@@ -24,7 +24,6 @@ void setup()
 void loop()
 {
     exec6502(100); //do 100 6502 instructions
-    clear_display();
 
     if (Serial.available())
     {

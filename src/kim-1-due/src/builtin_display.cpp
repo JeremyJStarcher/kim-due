@@ -5,7 +5,10 @@
 #include "kim-hardware.h"
 #include "boardhardware.h"
 
+void convert_led_pattern(void);
+
 const int delaytime = 150;
+static uint8_t xlate_led_pattern[256];
 
 byte dig[19] = {
     // bits     6543210
@@ -48,6 +51,8 @@ void init_display()
         lc.setIntensity(address, 8);
         lc.clearDisplay(address);
     }
+
+    convert_led_pattern();
 
     byte logo[]{
         0b01110111, // A
@@ -99,32 +104,7 @@ void driveLEDs()
 
 void driveLED(uint8_t led, uint8_t n)
 {
-    // --- LED VERSION ---
-    //      .::::-  (6)
-    // (1)  :    :  (5)
-    //      .::::.  (0)
-    // (2)  :    :  (4)
-    //      .::::-  (3)
-
-    // --- KIM VERSION ---
-    //      .::::-  (0)
-    // (5)  :    :  (1)
-    //      .::::.  (6)
-    // (4)  :    :  (2)
-    //      .::::-  (3)
-
-    int shift;
-    uint8_t result = 0;
-
-    for (shift = 0; shift < 8; shift++) {
-        result <<= 1;
-        result |= n & 1;
-        n >>= 1;
-    }
-
-    result >>= 1;
-
-    lc.setRow(0, t_8_6[led], result);
+    lc.setRow(0, t_8_6[led], xlate_led_pattern[n]);
 }
 
 void clear_display()
@@ -147,6 +127,7 @@ void clear_display()
 #if BOARD_WIRED_LED
 void init_display()
 {
+    convert_led_pattern();
 }
 
 void driveLEDs()
@@ -186,3 +167,41 @@ void clear_display()
 {
 }
 #endif
+
+void convert_led_pattern(void)
+{
+    // --- LED VERSION ---
+    //      .::::-  (6)
+    // (1)  :    :  (5)
+    //      .::::.  (0)
+    // (2)  :    :  (4)
+    //      .::::-  (3)
+
+    // --- KIM VERSION ---
+    //      .::::-  (0)
+    // (5)  :    :  (1)
+    //      .::::.  (6)
+    // (4)  :    :  (2)
+    //      .::::-  (3)
+
+    // As you can see, the LED patters are almost just mirror reverse of
+    // each other.
+    // Set up a translation table, -- its the fastest way to do it.
+
+    for (int i = 0; i < 256; i++)
+    {
+        uint8_t n = i;
+        int shift;
+        uint8_t result = 0;
+
+        for (shift = 0; shift < 8; shift++)
+        {
+            result <<= 1;
+            result |= n & 1;
+            n >>= 1;
+        }
+
+        result >>= 1;
+        xlate_led_pattern[i] = result;
+    }
+}
