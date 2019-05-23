@@ -1384,6 +1384,7 @@ void write6502(uint16_t address, uint8_t value)
             led = (ioPDB - 9) >> 1;
             code = ioPAD & ioPADD;
             driveLED(led, code);
+
             break;
         case aIoPADD:
             ioPADD = value;
@@ -1396,36 +1397,6 @@ void write6502(uint16_t address, uint8_t value)
             break;
         default:
             break;
-        }
-
-        if (
-            address == aIoPAD /* ||
-        address == aIoPADD ||
-        address == aIoPBD ||
-        address == aIoPBDD
-        */
-        )
-        {
-            char tmp[50];
-
-            // Serial.print((ioPDB - 9) >> 1);
-            // Serial.print("  ");
-            // Serial.println(ioPAD & ioPADD);
-
-            if (false)
-            {
-                Serial.print("Address ");
-                sprintf(tmp, "0x%.4X", address);
-                Serial.print(tmp);
-
-                Serial.print(":");
-                sprintf(tmp, "0x%.2X", value);
-                Serial.println(tmp);
-            }
-
-            // I/O 002
-            //    serout('%');  serout('2');      // trap code 2 - io2 access
-            return;
         }
     }
 
