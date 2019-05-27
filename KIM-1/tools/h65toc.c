@@ -107,12 +107,14 @@ int main(int argc, char *argv[])
             fprintf(ofp, ", ");
         }
 
-        if (false)
+        if (ctr % BYTES_PER_LINE == 0)
         {
-            if (ctr % BYTES_PER_LINE == 0)
+            if (false)
             {
                 fprintf(ofp, "  // %04X - %04X\n",
                         ((int)i - BYTES_PER_LINE), (int)i - 1);
+            } else {
+                fprintf(ofp, "\n");
             }
         }
         ctr++;

@@ -6,9 +6,10 @@ fs6:	fs6.cba
 
 fs7:	fs7.cba 
 	wine ../../bin/cba65/CBA65.EXE fs7.cba
-	../tools/h65toc FS7.h65 /tmp/fs7.c calcrom 0x30 
+	../tools/h65toc FS7.h65 ../../src/kim-1-due/src/roms/calcrom.h calcRom 0x30 
 
 clean:
 	$(RM) *.h6x *.hex *.lst *.h65 *.xrf *.log
 
 distclean: clean
+
