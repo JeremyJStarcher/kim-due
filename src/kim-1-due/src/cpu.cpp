@@ -17,11 +17,42 @@
 #include "boardhardware.h"
 #include "builtin_display.h"
 
+#define aIoPAD 0x1740
+#define aIoPADD 0x1741
+#define aIoPBD 0x1742
+#define aIoPBDD 0x1743
+
+static uint8_t ioPAD = 0;     // Port A data register
+static uint8_t ioPADD = 0xFF; // Port A data direction register
+static uint8_t ioPDB = 0;     // port B data register
+static uint8_t ioPBDD = 0;    // Port B data direction register
+
+void handle()
+{
+    uint8_t led;
+    uint8_t code;
+
+    led = (ioPDB - 9) >> 1;
+
+    // My guess is that some normally run routine
+    // set the ioPADD value back to a more sane state
+    // some function that we are totally bypassing.
+    //
+    // So just ignore it for now and the
+    // 'Light the LED Demo' runs
+
+    //code = ioPAD & ioPADD;
+
+    code = ioPAD; // & ioPADD;
+    driveLED(led, code);
+}
+
 void getBin(int num, char *str)
 {
     *(str + 5) = '\0';
     int mask = 0x10 << 1;
-    while (mask >>= 1) {
+    while (mask >>= 1)
+    {
         *str++ = !!(mask & num) + '0';
     }
 }
@@ -688,19 +719,6 @@ void write6502(uint16_t address, uint8_t value)
 
     if (address < 0x1780)
     {
-
-#define aIoPAD 0x1740
-#define aIoPADD 0x1741
-#define aIoPBD 0x1742
-#define aIoPBDD 0x1743
-
-        static uint8_t ioPAD;  // Port A data register
-        static uint8_t ioPADD; // Port A data direction register
-        static uint8_t ioPDB;  // port B data register
-        static uint8_t ioPBDD; // Port B data direction register
-        uint8_t led;
-        uint8_t code;
-
         switch (address)
         {
         case aIoPAD:
@@ -717,19 +735,23 @@ void write6502(uint16_t address, uint8_t value)
             * */
 
             ioPAD = value;
-            led = (ioPDB - 9) >> 1;
-            code = ioPAD & ioPADD;
-            driveLED(led, code);
+            handle();
 
             break;
         case aIoPADD:
             ioPADD = value;
+            handle();
+
             break;
         case aIoPBD:
             ioPDB = value & ioPBDD;
+            handle();
+
             break;
         case aIoPBDD:
             ioPBDD = value;
+            handle();
+
             break;
         default:
             break;
@@ -876,9 +898,17 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
     uint8_t i;
 
     // the first program from First Book of KIM...
-    uint8_t fbkDemo[9] = {
-        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
-    for (i = 0; i < 9; i++)
+
+    //    uint8_t fbkDemo[9] = {
+    //        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00
+    //    };
+
+    uint8_t fbkDemo[13] = {
+        0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
+
+    size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
+
+    for (i = 0; i < l; i++)
         RAM[i + 0x0200] = fbkDemo[i];
     RAM[0x0010] = 0x10;
     RAM[0x0011] = 0x11;
