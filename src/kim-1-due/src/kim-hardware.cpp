@@ -3,6 +3,7 @@
 
 #include "builtin_display.h"
 #include "cpu.h"
+#include "keypad.h"
 #include "kim-hardware.h"
 #include "boardhardware.h"
 
@@ -71,15 +72,15 @@ uint8_t getKIMkey()
     if ((curkey >= 'a') & (curkey <= 'f'))
         return (curkey - 'a' + 10);
 
-    if (curkey == 1)   // ctrlA
+    if (curkey == VKEY_AD)   // ctrlA
         return (0x10); // AD address mode
-    if (curkey == 4)   // ctrlD
+    if (curkey == VKEY_DA)   // ctrlD
         return (0x11); // DA data mode
-    if (curkey == '+') // +
+    if (curkey == VKEY_PLUS) // +
         return (0x12); // step
-    if (curkey == 7)   // ctrlG
+    if (curkey == VKEY_GO)   // ctrlG
         return (0x13); // GO
-    if (curkey == 16)  // ctrlP
+    if (curkey == VKEY_PC)  // ctrlP
         return (0x14); // PC mode
     // curkey==ctrlR for hard reset (/RST) (KIM's RS key) is handled in main loop!
     // curkey==ctrlT for ST key (/NMI) is handled in main loop!
@@ -127,27 +128,27 @@ void interpretkeys()
     // round 1: keys that always have the same meaning
     switch (curkey)
     {
-    case 18: // CtrlR = RS key = hardware reset (RST)
+    case VKEY_RS: // CtrlR = RS key = hardware reset (RST)
         reset6502();
         clearkey();
         Serial.print("RSet\n");
         break;
-    case 20: // CtrlT = ST key = throw an NMI to stop execution of user program
+    case VKEY_ST: // CtrlT = ST key = throw an NMI to stop execution of user program
         nmi6502();
         clearkey();
         Serial.print("STop\n");
         break;
-    case '[': // SST off
+    case VKEY_SST_OFF: // SST off
         SSTmode = 0;
         clearkey();
         Serial.print(F("                                      SST OFF         "));
         break;
-    case ']': // SST on
+    case VKEY_SST_ON: // SST on
         SSTmode = 1;
         clearkey();
         Serial.print(F("                                      SST ON          "));
         break;
-    case 9: // TAB pressed, toggle between serial port and onboard keyboard/display
+    case VKEY_TOGGLE_SERIAL_MODE: // TAB pressed, toggle between serial port and onboard keyboard/display
         if (useKeyboardLed == 0)
         {
             useKeyboardLed = 1;
@@ -161,7 +162,7 @@ void interpretkeys()
         reset6502();
         clearkey();
         break;
-    case '>': // Toggle write protect on eeprom
+    case VKEY_TOGGLE_EPROM_WRITE: // Toggle write protect on eeprom
         if (eepromProtect == 0)
         {
             eepromProtect = 1;
@@ -278,78 +279,76 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
     switch (n - 1)
     { //KIM Uno keyscan codes to ASCII codes used by emulator
     case 7:
-        c = '0';
+        c = VKEY_0;
         break; //        note: these are n-1 numbers!
     case 6:
-        c = '1';
+        c = VKEY_1;
         break; //
     case 5:
-        c = '2';
+        c = VKEY_2;
         break; //
     case 4:
-        c = '3';
+        c = VKEY_3;
         break; //
     case 3:
-        c = '4';
+        c = VKEY_4;
         break; //
     case 2:
-        c = '5';
+        c = VKEY_5;
         break; //
     case 1:
-        c = '6';
+        c = VKEY_6;
         break; //
     case 0:
-        c = 20;
+        c = VKEY_ST;
         break; // ST
-
     case 15:
-        c = '7';
+        c = VKEY_7;
         break; //
     case 14:
-        c = '8';
+        c = VKEY_8;
         break; //
     case 13:
-        c = '9';
+        c = VKEY_9;
         break; //
     case 12:
-        c = 'A';
+        c = VKEY_A;
         break; //
     case 11:
-        c = 'B';
+        c = VKEY_B;
         break; //
     case 10:
-        c = 'C';
+        c = VKEY_C;
         break; //
     case 9:
-        c = 'D';
+        c = VKEY_D;
         break; //
     case 8:
-        c = 18;
+        c = VKEY_RS;
         break; // RS
-
     case 23:
-        c = 'E';
+        c = VKEY_E;
         break; //
     case 22:
-        c = 'F';
+        c = VKEY_F;
         break; //
     case 21:
-        c = 1;
+        c = VKEY_AD;
         break; // AD
     case 20:
-        c = 4;
+        c = VKEY_DA;
         break; // DA
     case 19:
-        c = '+';
+        c = VKEY_PLUS;
         break; // +
     case 18:
-        c = 7;
+        c = VKEY_GO;
         break; // GO
     case 17:
-        c = 16;
+        c = VKEY_PC;
         break; // PC
     case 16:
-        c = (SSTmode == 0 ? ']' : '[');
+        c = (SSTmode == 0 ? VKEY_SST_ON : VKEY_SST_OFF);
         break; // 	SST toggle
     }
     return c;
