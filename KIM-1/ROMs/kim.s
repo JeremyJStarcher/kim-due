@@ -70,44 +70,44 @@ IRQV    =     $17FE     ; IRQ VECTOR (BRK=1C00)
 ;
 ;       ** DUMP MEMORY TO TAPE **
 DUMPT   LDA   #$AD      ; LOAD ABSOLUTE INST            1800
-        STA   VEB   
+        STA   VEB
         JSR   INTVEB
         LDA   #$27      ; TURN OFF DATAIN PB5
-        STA   SBD   
+        STA   SBD
         LDA   #$BF      ; CONVERT PB7 TO OUTPUT
-        STA   PBDD  
-        LDX   #$64      ; 100 CHARS 
+        STA   PBDD
+        LDX   #$64      ; 100 CHARS
 DUMPT1  LDA   #$16      ; SYNC CHARS
         JSR   OUTCHT
-        DEX         
+        DEX
         BNE   DUMPT1
         LDA   #$2A      ; START CHAR
         JSR   OUTCHT
-        LDA   ID        ; OUTPUT ID 
-        JSR   OUTBT 
+        LDA   ID        ; OUTPUT ID
+        JSR   OUTBT
         LDA   SAL       ; OUTPUT STARTING
-        JSR   OUTBTC    ; ADDRESS 
-        LDA   SAH   
+        JSR   OUTBTC    ; ADDRESS
+        LDA   SAH
         JSR   OUTBTC
 DUMPT2  LDA   VEB+1     ; CHECK FOR LAST
         CMP   EAL       ; DATA BYTE
-        LDA   VEB+2 
-        SBC   EAH   
+        LDA   VEB+2
+        SBC   EAH
         BCC   DUMPT4
         LDA   #'/'      ; OUTPUT END-OF-DATA CHAR
         JSR   OUTCHT
-        LDA   CHKL      ; LAST BYTE HAS BEEN 
+        LDA   CHKL      ; LAST BYTE HAS BEEN
         JSR   OUTBT     ; OUTPUT  NOW OUTPUT
         LDA   CHKH      ; CHKSUM
-        JSR   OUTBT 
+        JSR   OUTBT
         LDX   #$02      ; 2 CHARS
-DUMPT3  LDA   #$04      ; EOT CHAR       
-        JSR   OUTCHT 
-        DEX          
-        BNE   DUMPT3    
+DUMPT3  LDA   #$04      ; EOT CHAR
+        JSR   OUTCHT
+        DEX
+        BNE   DUMPT3
         LDA   #$00      ; DISPLAY 0000
         STA   POINTL    ; FOR NORMAL EXIT
-        STA   POINTH  
+        STA   POINTH
         JMP   START
 DUMPT4  JSR   VEB       ; DATA BYTE OUTPUT
         JSR   OUTBTC
@@ -123,15 +123,15 @@ LOADT   LDA   #$8D      ; INIT VOLATILE EXECUTION       1873
         JSR   INTVEB
         LDA   #$4C      ; JUMP TYPE RTRN
         STA   VEB+3
-        LDA   TAB  
+        LDA   TAB
         STA   VEB+4
         LDA   TAB+1
         STA   VEB+5
         LDA   #$07      ; RESET PB5=0 (DATA-IN)
         STA   SBD
 SYNC    LDA   #$FF      ; CLEAR SAVX FOR SYNC CHAR      1891
-        STA   SAVX 
-SYNC1   JSR   RDBIT     ; GET A BIT        
+        STA   SAVX
+SYNC1   JSR   RDBIT     ; GET A BIT
         LSR   SAVX      ; SHIFT BIT INTO CHAR
         ORA   SAVX
         STA   SAVX
@@ -139,10 +139,10 @@ SYNC1   JSR   RDBIT     ; GET A BIT
         CMP   #$16      ; SYNC CHAR
         BNE   SYNC1
         LDX   #$0A      ; TEST FOR 10 SYNC CHARS
-SYNC2   JSR   RDCHT                      
-        CMP   #$16  
+SYNC2   JSR   RDCHT
+        CMP   #$16
         BNE   SYNC      ; IF NOT 10 CHAR, RE-SYNC
-        DEX     
+        DEX
         BNE   SYNC2
 LOADT4  JSR   RDCHT     ; LOOK FOR START OF
         CMP   #$2A      ; DATA CHAR
@@ -171,13 +171,13 @@ LOADT6  JSR   RDBYT     ; GET SA BUT IGNORE             18EC
         JSR   CHKT
         JSR   RDBYT
         JSR   CHKT
-LOADT7  LDX   #$02      ; GET 2 CHARS 
+LOADT7  LDX   #$02      ; GET 2 CHARS
 LOAD13  JSR   RDCHT     ; GET CHAR (X)
         CMP   #$2F      ; LOOK FOR LAST CHAR
         BEQ   LOADT8
         JSR   PACKT     ; CONVERT TO HEX
         BNE   LOADT9    ; Y=1 NON-HEX CHAR
-        DEX                         
+        DEX
         BNE   LOAD13
         JSR   CHKT      ; COMPARE CHECKSUM
         JMP   VEB       ; SAVX DATA IN MEMORY
@@ -192,8 +192,8 @@ LOADT8  JSR   RDBYT     ; END OF DATA, COMPARE CHKSUM   1915
         BNE   LOADT9
         LDA   #$00      ; NORMAL EXIT
         BEQ   LOAD10
-LOADT9  LDA   #$FF      ; ERROR EXIT 
-LOAD10  STA   POINTL               
+LOADT9  LDA   #$FF      ; ERROR EXIT
+LOAD10  STA   POINTL
         STA   POINTH
         JMP   START
 ;
@@ -210,14 +210,14 @@ INTVEB  LDA   SAL       ; MOVE SA TO VEB+1,2            1932
         RTS
 ;       ** COMPUTE CHKSUM FOR TAPE LOAD **
 CHKT    TAY             ;                               194C
-        CLC     
+        CLC
         ADC   CHKL
         STA   CHKL
         LDA   CHKH
         ADC   #$00
         STA   CHKH
-        TYA       
-        RTS 
+        TYA
+        RTS
 ;       ** OUTPUT ONE BYTE **
 OUTBTC  JSR   CHKT      ; COMPARE CHKSUM                195E
 OUTBT   TAY             ; SAVX DATA BYTE
@@ -226,14 +226,14 @@ OUTBT   TAY             ; SAVX DATA BYTE
         LSR   A
         LSR   A
         JSR   HEXOUT    ; OUTPUT MSD
-        TYA 
+        TYA
         JSR   HEXOUT    ; OUTPUT LSD
-        TYA  
-        RTS 
+        TYA
+        RTS
 ;       ** CONVERT LSD OF A TO ASCII, OUTPUT TO TAPE **
 HEXOUT  AND   #$0F      ;                               196F
-        CMP   #$0A      
-        CLC   
+        CMP   #$0A
+        CLC
         BMI   HEX1
         ADC   #$07
 HEX1    ADC   #$30
@@ -241,13 +241,13 @@ HEX1    ADC   #$30
 OUTCHT  STX   SAVX      ;                               197A
         STY   SAVX+1
         LDY   #$08      ; START BIT
-CHT1    JSR   ONE                  
+CHT1    JSR   ONE
         LSR   A         ; GET DATA BIT
-        BCS   CHT2 
+        BCS   CHT2
         JSR   ONE       ; DATA BIT=1
         JMP   CHT3
-CHT2    JSR   ZRO       ; DATA BIT=0 
-CHT3    JSR   ZRO                  
+CHT2    JSR   ZRO       ; DATA BIT=0
+CHT3    JSR   ZRO
         DEY
         BNE   CHT1
         LDX   SAVX
@@ -260,34 +260,34 @@ ONE1    BIT   CLKRDI    ; WAIT FOR TIME OUT             19A1
         BPL   ONE1
         LDA   #126
         STA   CLK1T
-        LDA   #$A7 
+        LDA   #$A7
         STA   SBD       ; SET PB7 = 1
 ONE2    BIT   CLKRDI    ;                               19B0
-        BPL   ONE2 
+        BPL   ONE2
         LDA   #126
         STA   CLK1T
-        LDA   #$27 
+        LDA   #$27
         STA   SBD       ; RESET PB7=0
-        DEX   
+        DEX
         BNE   ONE1
-        PLA  
-        RTS  
+        PLA
+        RTS
 ;       ** OUTPUT 0 TO TAPE, 6 PULSES, 207 US EACH **
 ZRO     LDX   #$06      ;                               19C4
         PHA             ; SAVX A
 ZRO1    BIT   CLKRDI    ;                               19C7
-        BPL   ZRO1 
-        LDA   #$C3 
+        BPL   ZRO1
+        LDA   #$C3
         STA   CLK1T
-        LDA   #$A7 
+        LDA   #$A7
         STA   SBD       ; SET PB7=1
 ZRO2    BIT   CLKRDI
-        BPL   ZRO2 
-        LDA   #195 
+        BPL   ZRO2
+        LDA   #195
         STA   CLK1T
-        LDA   #$27 
+        LDA   #$27
         STA   SBD       ; RESET PB7=0
-        DEX        
+        DEX
         BNE   ZRO1
         PLA             ; RESTORE A
         RTS
@@ -295,7 +295,7 @@ ZRO2    BIT   CLKRDI
 INCVEB  INC   VEB+1     ;                               19EA
         BNE   INCVE1
         INC   VEB+2
-INCVE1  RTS     
+INCVE1  RTS
 ;       ** SUB TO READ BYTE FROM TAPE **
 RDBYT   JSR   RDCHT     ;                              19F3
         JSR   PACKT
@@ -307,10 +307,10 @@ PACKT   CMP   #$30      ;                               1A00
         BMI   PACKT3
         CMP   #$47
         BPL   PACKT3
-        CMP   #$40  
+        CMP   #$40
         BMI   PACKT1
-        CLC         
-        ADC   #$09  
+        CLC
+        ADC   #$09
 PACKT1  ROL   A
         ROL   A
         ROL   A
@@ -318,14 +318,14 @@ PACKT1  ROL   A
         LDY   #$04
 PACKT2  ROL   A
         ROL   SAVX
-        DEY          
+        DEY
         BNE   PACKT2
         LDA   SAVX
         LDY   #$00      ; Y=0 VALID HEX CHAR
         RTS
 PACKT3  INY             ; Y=1 NOT HEX
         RTS
-;       ** GET 1 CHAR FROM TAPE AND RETURN WITH 
+;       ** GET 1 CHAR FROM TAPE AND RETURN WITH
 ;          CHAR IN A.  USE SAVX+1 TO ASM CHAR  **
 RDCHT   STX   SAVX+2    ;                              1A24
         LDX   #$08      ; READ 8 BITS
@@ -333,7 +333,7 @@ RDCHT1  JSR   RDBIT     ; GET NEXT DATA BIT
         LSR   SAVX+1    ; RIGHT SHIFT CHAR
         ORA   SAVX+1    ; OR IN SIGN BIT
         STA   SAVX+1    ; REPLACE CHAR
-        DEX          
+        DEX
         BNE   RDCHT1
         LDA   SAVX+1    ; MOVE CHAR INTO A
         ROL   A         ; SHIFT OFF PARITY
@@ -345,14 +345,14 @@ RDCHT1  JSR   RDBIT     ; GET NEXT DATA BIT
 RDBIT   BIT   SBD       ; WAIT FOR END OF START BIT     1A41
         BPL   RDBIT
         LDA   CLKRDT    ; GET START BIT TIME
-        LDY   #$FF      ; A=256-T1    
+        LDY   #$FF      ; A=256-T1
         STY   CLK64T    ; SET UP TIMER
-        LDY   #$14  
+        LDY   #$14
 RDBIT3  DEY             ; DELAY 100 MICRO SEC
         BNE   RDBIT3
 RDBIT2  BIT   SBD
         BMI   RDBIT2    ; WAIT FOR NEXT START BIT
-        SEC   
+        SEC
         SBC   CLKRDT    ; (256-T1)-(256-T2)=T2-T1
         LDY   #$FF
         STY   CLK64T    ; SET UP TIMER FOR NEXT BIT
@@ -361,21 +361,21 @@ RDBIT4  DEY             ; DELAY 50 MICROSEC
         BNE   RDBIT4
         EOR   #$FF      ; COMPLEMENT SIGN OF A
         AND   #$80      ; MASK ALL EXCEPT SIGN
-        RTS 
+        RTS
 ;       ** PLLCAL OUTPUT 166 MICROSEC (6024 HZ)
-;          PULSE STRING 
+;          PULSE STRING
 PLLCAL  LDA   #$27      ;                              1A6B
         STA   SBD       ; TURN OFF DATIN PB5=1
         LDA   #$BF      ; CONVERT PB7 TO OUTPUT
         STA   PBDD
 PLL1    BIT   CLKRDI
-        BPL   PLL1  
+        BPL   PLL1
         LDA   #154      ; WAIT 166 MICROSEC
         STA   CLK1T
         LDA   #$A7      ; OUTPUT PB7=1
         STA   SBD
 PLL2    BIT   CLKRDI
-        BPL   PLL2 
+        BPL   PLL2
         LDA   #154
         STA   CLK1T
         LDA   #$27      ; PB7=0
@@ -421,7 +421,7 @@ IRQP27  .WORD PLLCAL
 ;         RUN   GOEXEC
 ;         STOP  $1C00 CAN BE LOADED INTO NMIV TO USE
 ;         PC    DISPLAY PC (PROGRAM COUNTER)
-;         
+;
         .org  $1C00
 SAVE    STA   ACC       ; KIM ENTRY VIA STOP (NMI)      1C00
         PLA             ; OR BRK (IRQ)
@@ -429,12 +429,12 @@ SAVE    STA   ACC       ; KIM ENTRY VIA STOP (NMI)      1C00
         PLA             ; KIM ENTRY VIA JSR (A LOST)    1C05
         STA   PCL
         STA   POINTL
-        PLA         
+        PLA
         STA   PCH
         STA   POINTH
         STY   YREG
         STX   XREG
-        TSX   
+        TSX
         STX   SPUSER
         JSR   INITS
         JMP   START
@@ -475,7 +475,7 @@ CLEAR   LDA   #$00
         STA   INL       ; CLEAR INPUT BUFFER
         STA   INH
 READ    JSR   GETCH     ; GET CHAR
-        CMP   #$01      
+        CMP   #$01
         BEQ   TTYKB
         JSR   PACK
         JMP   SCAN
@@ -483,14 +483,14 @@ READ    JSR   GETCH     ; GET CHAR
 TTYKB   JSR   SCAND     ; IF A=0 NO KEY                 1C77
         BNE   START
 TTYKB1  LDA   #$01
-        BIT   SAD 
+        BIT   SAD
         BEQ   START
         JSR   SCAND
         BEQ   TTYKB1
         JSR   SCAND
         BEQ   TTYKB1
         JSR   GETKEY
-        CMP   #$15  
+        CMP   #$15
         BPL   START
         CMP   #$14
         BEQ   PCCMD     ; DISPLAY PC
@@ -519,13 +519,13 @@ DATA1   LDY   MODE      ; TEST MODE 1=ADDR
 ADDR    ASL   A         ; SHIFT CHAR
         ROL   POINTL    ; SHIFT ADDR
         ROL   POINTH    ; SHIFT ADDR HI
-DATA2   DEX   
+DATA2   DEX
         BNE   DATA1     ; DO 4 TIMES
         BEQ   DATAM2    ; EXIT HERE
 ADDRM   LDA   #$01
         BNE   DATAM1
-DATAM   LDA   #$00 
-DATAM1  STA   MODE 
+DATAM   LDA   #$00
+DATAM1  STA   MODE
 DATAM2  JMP   START
 ;
 STEP    JSR   INCPT     ;                               1CD3
@@ -560,7 +560,7 @@ LOAD2   JSR   GETBYT    ; GET DATA
         STA   (POINTL),Y ; STORE DATA
         JSR   CHK
         JSR   INCPT     ; NEXT ADDRESS
-        DEX    
+        DEX
         BNE   LOAD2
         INX             ; X=1 DATA RCD X=0 LAST RCD
 LOAD3   JSR   GETBYT    ; COMPARE CHKSUM
@@ -580,7 +580,7 @@ LOAD8   LDA   #$27
 LOADE1  JSR   GETBYT    ; DUMMY
 LOADER  LDX   #$11      ; X-OFF ERR KIM
         BNE   LOAD8
-;       ** DUMP TO TTY FROM OPEN CELL ADDRESS TO 
+;       ** DUMP TO TTY FROM OPEN CELL ADDRESS TO
 ;          LIMHL, LIMHH **
 DUMP    LDA   #$00      ;                               1D42
         STA   INL
@@ -641,13 +641,13 @@ RTRN    JSR   INCPT     ; OPEN NEXT CELL                1DC2
         JMP   SHOW
 ;
 GOEXEC  LDX   SPUSER    ;                               1DC8
-        TXS   
+        TXS
         LDA   POINTH    ; PROGRAM RUNS FROM
         PHA             ; OPEN CELL ADDRESS
         LDA   POINTL
-        PHA      
+        PHA
         LDA   PREG
-        PHA       
+        PHA
         LDX   XREG      ; RESTORE REGS
         LDY   YREG
         LDA   ACC
@@ -673,7 +673,7 @@ SCAN    CMP   #$20      ; OPEN CELL
 ;
 STV     JMP   START
 DUMPV   JMP   DUMP
-LOADV   JMP   LOAD 
+LOADV   JMP   LOAD
 ;
 FEED    SEC             ;                               1E07
         LDA   POINTL    ; DEC DOUBLE BYTE
@@ -683,10 +683,10 @@ FEED    SEC             ;                               1E07
         DEC   POINTH
 FEED1   JMP   SHOW
 ;
-MODIFY  LDY   #$00      ; GET CONTENTS OF INPUT BUFF 
+MODIFY  LDY   #$00      ; GET CONTENTS OF INPUT BUFF
         LDA   INL       ; INL AND STORE IN LOC
         STA   (POINTL),Y ; SPECIFIED BY POINT
-        JMP   RTRN 
+        JMP   RTRN
 ;
 ;       ** SUBROUTINES FOLLOW **
 PRTPNT  LDA   POINTH    ; PRINT POINTL, POINTH          1E1E
@@ -697,10 +697,10 @@ PRTPNT  LDA   POINTH    ; PRINT POINTL, POINTH          1E1E
         JSR   CHK
         RTS
 ;       **PRINT STRING OF ASCII CHARS FROM TOP+X TO TOP
-CRLF    LDX   #$07    
-PRTST   LDA   TOP,X 
+CRLF    LDX   #$07
+PRTST   LDA   TOP,X
         JSR   OUTCH
-        DEX 
+        DEX
         BPL   PRTST     ; STOP ON INDEX ZERO
         RTS
 ;       ** PRINT 1 HEX BYTE AS 2 ASCII CHARS **
@@ -713,10 +713,10 @@ PRTBYT  STA   TEMP      ;                               1E3B
         LDA   TEMP      ; GET OTHER HALF
         JSR   HEXTA     ; CONVERT TO HEX AND PRINT
         LDA   TEMP      ; RESTORE BYTE IN A AND RETURN
-        RTS   
+        RTS
 HEXTA   AND   #$0F      ; MASK HI 4 BITS
         CMP   #$0A
-        CLC       
+        CLC
         BMI   HEXTA1
         ADC   #$07      ; ALPHA HEX
 HEXTA1  ADC   #$30      ; DEC HEX
@@ -726,7 +726,7 @@ GETCH   STX   TMPX      ; SAVE X REG     1E5A
         LDX   #$08      ; SET UP 8-BIT COUNT
         LDA   #$01
 GET1    BIT   SAD
-        BNE   GET6 
+        BNE   GET6
         BMI   GET1      ; WAIT FOR START BIT
         JSR   DELAY     ; DELAY 1 BIT
 GET5    JSR   DEHALF    ; DELAY 1/2 BIT TIME
@@ -736,25 +736,25 @@ GET2    LDA   SAD       ; GET 8 BITS
         ORA   CHAR
         STA   CHAR
         JSR   DELAY     ; DELAY 1 BIT TIME
-        DEX  
+        DEX
         BNE   GET2      ; GET NEXT CHAR
         JSR   DEHALF    ; EXIT THIS ROUTINE
         LDX   TMPX
         LDA   CHAR
         ROL   A         ; SHIFT OFF PARITY
         LSR   A
-GET6    RTS   
+GET6    RTS
 ;       ** INITIALIZATION FOR SIGMA **
 INITS   LDX   #$01      ; SET KB MODE TO ADDR           1E88
         STX   MODE
-INIT1   LDX   #$00      
+INIT1   LDX   #$00
         STX   PADD      ; FOR SIGMA USE SADD
         LDX   #$3F
         STX   PBDD      ; FOR SIGMA USE SBDD
         LDX   #$07      ; ENABLE DATA IN
         STX   SBD       ; OUTPUT
-        CLD    
-        SEI    
+        CLD
+        SEI
         RTS
 ;       ** PRINT ONE CHAR IN A **
 OUTSP   LDA   #$20      ; PRINT SPACE                   1E9E
@@ -765,14 +765,14 @@ OUTCH   STA   CHAR
         AND   #$FE
         STA   SBD
         JSR   DELAY
-        LDX   #$08 
+        LDX   #$08
 OUT1    LDA   SBD       ; DATA BIT
-        AND   #$FE 
+        AND   #$FE
         LSR   CHAR
         ADC   #$00
-        STA   SBD  
+        STA   SBD
         JSR   DELAY
-        DEX  
+        DEX
         BNE   OUT1
         LDA   SBD       ; STOP BIT
         ORA   #$01
@@ -784,15 +784,15 @@ OUT1    LDA   SBD       ; DATA BIT
 DELAY   LDA   CNTH30    ;                               1ED4
         STA   TIMH
         LDA   CNTL30
-DE2     SEC   
-DE4     SBC   #$01 
-        BCS   DE3  
+DE2     SEC
+DE4     SBC   #$01
+        BCS   DE3
         DEC   TIMH
 DE3     LDY   TIMH
         BPL   DE2
         RTS
 ;       ** DELAY 1/2 BIT TIME **
-DEHALF  LDA   CNTH30    ;                               1EEB  
+DEHALF  LDA   CNTH30    ;                               1EEB
         STA   TIMH
         LDA   CNTL30
         LSR   A
@@ -800,7 +800,7 @@ DEHALF  LDA   CNTH30    ;                               1EEB
         BCC   DE2
         ORA   #$80
         BCS   DE4
-;       ** SUB TO DETERMINE IF KEY IS DEPRESSED OR 
+;       ** SUB TO DETERMINE IF KEY IS DEPRESSED OR
 ;          CONDITION OF SSW KEY NOT DEPRESSED OR
 ;          TTY MODE  A=0
 ;          KEY DEPRESSED OR KB MODE  A NOT ZERO
@@ -809,17 +809,17 @@ AK      LDY   #$03      ; 3 ROWS
 ONEKEY  LDA   #$FF
 AK1     STX   SBD       ; OUTPUT DIGIT
         INX             ; GET NEXT DIGIT
-        INX 
+        INX
         AND   SAD       ; INPUT SEGMENTS
-        DEY 
+        DEY
         BNE   AK1
         LDY   #$07
         STY   SBD
         ORA   #$80
         EOR   #$FF
-        RTS 
+        RTS
 ;       ** OUTPUT TO 7-SEGMENT DISPLAY **
-SCAND   LDY   #$00      ; GET DATA                      1F19 
+SCAND   LDY   #$00      ; GET DATA                      1F19
         LDA   (POINTL),Y ; SPECIFIED BY POINT
         STA   INH       ; SET UP DISPLAY BUFFER
         LDA   #$7F      ; CHANGE SEG
@@ -850,7 +850,7 @@ CONVD   STY   TEMP
         STX   SBD       ; OUTPUT DIGIT ENABLE
         STA   SAD       ; OUTPUT SEGMENTS
         LDY   #$7F      ; DELAY 500 CYCLES
-CONVD1  DEY   
+CONVD1  DEY
         BNE   CONVD1
         INX             ; GET NEXT DIGIT NUMBER
         INX             ; ADD 2
@@ -860,9 +860,9 @@ CONVD1  DEY
 INCPT   INC   POINTL
         BNE   INCPT2
         INC   POINTH
-INCPT2  RTS   
+INCPT2  RTS
 ;       ** GET KEY FROM KEYPAD A=KEYVALUE **
-GETKEY  LDX   #$21      ; START AT DIGIT 0              1F6A 
+GETKEY  LDX   #$21      ; START AT DIGIT 0              1F6A
 GETKE5  LDY   #$01      ; GET 1 ROW
         JSR   ONEKEY
         BNE   KEYIN     ; A=0 NO KEY
@@ -870,24 +870,24 @@ GETKE5  LDY   #$01      ; GET 1 ROW
         BNE   GETKE5
         LDA   #$15      ; 15=NOKEY
         RTS
-KEYIN   LDY   #$FF      
+KEYIN   LDY   #$FF
 KEYIN1  ASL   A         ; SHIFT LEFT
         BCS   KEYIN2    ; UNTIL Y=KEY NO
-        INY   
+        INY
         BPL   KEYIN1
-KEYIN2  TXA  
+KEYIN2  TXA
         AND   #$0F      ; MASK MSD
         LSR   A         ; DIVIDE BY 2
-        TAX   
-        TYA   
+        TAX
+        TYA
         BPL   KEYIN4
-KEYIN3  CLC   
+KEYIN3  CLC
         ADC   #$07      ; MULT (X-1 TIMES A
-KEYIN4  DEX   
+KEYIN4  DEX
         BNE   KEYIN3
         RTS
 ;       ** COMPUTE CHECKSUM **
-CHK     CLC   
+CHK     CLC
         ADC   CHKSUM
         STA   CHKSUM
         LDA   CHKHI
@@ -908,20 +908,20 @@ PACK    CMP   #$30      ; CHECK FOR HEX  1FAC
         BPL   UPDAT2
         CMP   #$40      ; CONVERT TO HEX
         BMI   UPDATE
-        CLC   
+        CLC
         ADC   #$09
 UPDATE  ROL   A
         ROL   A
         ROL   A
         ROL   A
         LDY   #$04      ; SHIFT INTO I/O BUFFER
-UPDAT1  ROL   A 
+UPDAT1  ROL   A
         ROL   INL
         ROL   INH
-        DEY   
+        DEY
         BNE   UPDAT1
         LDA   #$00      ; A=0 IF HEX NUM
-UPDAT2  RTS   
+UPDAT2  RTS
 ;
 OPEN    LDA   INL       ; MOVE I/O BUFFER TO POINT
         STA   POINTL

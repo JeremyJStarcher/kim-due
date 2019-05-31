@@ -29,5 +29,4 @@ extern byte aRows[3];
 extern byte ledSelect[8];
 extern byte ledSelect7[8];
 
-
 #endif
