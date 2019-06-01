@@ -17,6 +17,8 @@
 #include "boardhardware.h"
 #include "builtin_display.h"
 
+#define EMULATE_KEYBOARD
+
 #define aIoPAD 0x1740
 #define aIoPADD 0x1741
 #define aIoPBD 0x1742
@@ -488,6 +490,7 @@ uint8_t read6502(uint16_t address)
             return (0xFF);
         }
 
+#ifdef EMULATE_KEYBOARD
         if (address == 0x1740)
         {
             // returns 1 for Keyboard/LED or 0 for Serial terminal
@@ -498,6 +501,104 @@ uint8_t read6502(uint16_t address)
         serout('6'); // trap code 6 - read in I/O 002
         return (0);
     }
+#else
+        static uint8_t lastKey = 0xFF;
+        uint8_t regMDR = 0;
+
+        uint8_t keyValue = getKIMkey();
+        if (keyValue != lastKey)
+        {
+            lastKey = keyValue;
+            Serial.print("keyValue - ");
+            Serial.println(keyValue);
+        }
+
+        switch (address)
+        {
+        case aIoPAD:
+            switch (ioPBD & 0x07)
+            {
+                /**
+                 * How keypad keypresses are detected:
+                 *
+                 * The value of bits 2 & 1 in ioPBD enables scanning different
+                 * "rows" (electronic arrangement, not physical) of the keyboard.
+                 * (The remaining bits of ioPBD are ignored, with the exception
+                 * of bit 0, which is expected to be set to 1.) The keys in a
+                 * given row are mapped to bits in ioPAD. A 1-bit corresponds to
+                 * an up key, and a 0-bit corresponds to a depressed key. The
+                 * rows and keys are mapped thus:
+                 *
+                 *   value of ioPBD
+                 *   bits 2 and 1 -> 00     01     10     11
+                 *                   |      |      |      |
+                 *             enables  enables  enables  enables
+                 *                   |      |      |      |
+                 *      bit          |      |      |      |     value of ioPAD
+                 *   assignment    row0   row1   row2   row3   when key pressed
+                 *   ----------    ----   ----   ----   ----   ----------------
+                 *   ioPAD-bit6      0      7      E              1011 1111
+                 *   ioPAD-bit5      1      8      F              1101 1111
+                 *   ioPAD-bit4      2      9     AD              1110 1111
+                 *   ioPAD-bit3      3      A     DA              1111 0111
+                 *   ioPAD-bit2      4      B      +              1111 1011
+                 *   ioPAD-bit1      5      C     GO              1111 1101
+                 *   ioPAD-bit0      6      D     PC     SST      1111 1110
+                 *                 -------------------------
+                 *                        keypad keys
+                 */
+            case 1:
+                regMDR = ~(0x40 >> keyValue);
+                break;
+            case 3:
+                regMDR = ~(0x40 >> (keyValue - 7));
+                break;
+            case 5:
+                regMDR = ~(0x40 >> (keyValue - 14));
+                break;
+            case 7:
+                regMDR = useKeyboardLed ? 0xFF : 0xFE;
+                break;
+            default:
+                regMDR = 0xFF;
+                break;
+            }
+
+            regMDR &= ~ioPADD;
+#if 0
+            if (keyValue != 15)
+            {
+                Serial.print("keyValue - ");
+                Serial.print(keyValue);
+                Serial.print("   regMDR - ");
+                Serial.print(regMDR);
+                Serial.println("");
+            }
+#endif
+
+            break;
+        case aIoPADD:
+            regMDR = ioPADD;
+            break;
+        case aIoPBD:
+            regMDR = ioPBD;
+            regMDR &= ~ioPBDD;
+            break;
+        case aIoPBDD:
+            regMDR = ioPBDD;
+            break;
+        case 0x1706:
+            //  regMDR = ~((UInt8)hwCycles);
+            break;
+        default:
+            regMDR = 0xff;
+            break;
+        }
+
+        return regMDR;
+    }
+
+#endif
 
     if (address < 0x17C0)
     { // 0x1780-0x17C0 is RAM from RIOT 003
@@ -521,6 +622,8 @@ uint8_t read6502(uint16_t address)
             pc = 0x1ED3;   // skip subroutine
             return (0xEA); // and return from subroutine with a fake NOP instruction
         }
+
+#ifdef EMULATE_KEYBOARD
         if (address == 0x1E65)
         {                  //intercept GETCH (get char from serial). used to be 0x1E5A, but intercept *within* routine just before get1 test
             a = getAkey(); // get A from main loop's curkey
@@ -534,6 +637,8 @@ uint8_t read6502(uint16_t address)
             pc = 0x1E87;     // skip subroutine
             return (0xEA);   // and return from subroutine with a fake NOP instruction
         }
+#endif
+
         if (address == 0x1C2A)
         {                                // intercept DETCPS
             RAM002[0x17F3 - 0x17C0] = 1; // just store some random bps delay on TTY in CNTH30
@@ -578,15 +683,24 @@ uint8_t read6502(uint16_t address)
             //pc = 0x1F45;   // skip subroutine part that deals with LEDs
             //return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
         }
+
+#ifdef EMULATE_KEYBOARD
         if (address == 0x1EFE)
         {                  // intercept AK (check for any key pressed)
             a = getAkey(); // 0 means no key pressed - the important bit - but if a key is pressed is curkey the right value to send back?
             //a= getKIMkey();
             if (a == 0)
-                a = 0xFF;  // that's how AK wants to see 'no key'
-            pc = 0x1F14;   // skip subroutine
+                a = 0xFF; // that's how AK wants to see 'no key'
+            pc = 0x1F14;  // skip subroutine
+
+            Serial.print("AK = ");
+            Serial.println(a);
+
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
+#endif
+
+#ifdef EMULATE_KEYBOARD
         if (address == 0x1F6A)
         { // intercept GETKEY (get key from keyboard)
             //		serout('-');serout('G');serout('K');serout('-');
@@ -595,6 +709,8 @@ uint8_t read6502(uint16_t address)
             pc = 0x1F90;   // skip subroutine part that deals with LEDs
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
+#endif
+
         // if we're still here, it's normal reading from the highest ROM 002.
         return (pgm_read_byte_near(monitor + address - 0x1C00)); // ROM 002
     }
@@ -858,25 +974,20 @@ void write6502(uint16_t address, uint8_t value)
 
             break;
         case aIoPADD:
-            if (0)
-            {
-                Serial.print("Setting aIOPADD to ");
-                Serial.println(value);
-            }
             ioPADD = value;
             handle();
-
             break;
+
         case aIoPBD:
             ioPBD = value & ioPBDD;
             handle();
-
             break;
+
         case aIoPBDD:
             ioPBDD = value;
             handle();
-
             break;
+
         default:
             break;
         }
