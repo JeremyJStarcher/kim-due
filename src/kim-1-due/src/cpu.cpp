@@ -162,13 +162,6 @@ int32_t clockticks6502 = 0, clockgoal6502 = 0;
 uint16_t oldpc, ea, reladdr, value, result;
 uint8_t opcode, oldcpustatus, useaccum;
 
-// FLTPT65 SUPPORT ------------------------------------------------------------------
-void copyWreg(uint8_t a, uint8_t b);
-void swapWreg(uint8_t a, uint8_t b);
-extern uint8_t enterflt(uint8_t reg);
-extern uint8_t showflt(uint8_t reg);
-extern uint8_t enteroperation(void);
-
 // --- OVERVIEW OF KIM-1 MEMORY MAP -------------------------------------------------
 uint8_t RAM[ONBOARD_RAM]; // main 1KB RAM	     0x0000-0x04FF
 // empty            					    0x0900-0x13FF
@@ -184,13 +177,7 @@ uint8_t RAM002[64]; // RAM from 6530-002  0x17C0-0x17FF, free for user except 0x
 //               FFFA, FFFB - NMI Vector
 //               FFFC, FFFD - RST Vector
 //               FFFE, FFFF - IRQ Vector
-// Application roms (mchess, calc) are above standard 8K of KIM-1
-
-// --- CRBond calculator RAM workspace: --------------------------------------------
-// - NOTE THAT UPPER 128 BYTES OF KIM RAM IS USED BY CALCULATOR AS WORKSPACE!
-// - W1 starts at 3Df
-// - W2 starts at 3E7
-// - W3 starts at 3EF
+// Application roms (mchess) are above standard 8K of KIM-1
 
 uint8_t getRegister(uint8_t reg, char *inVal)
 {
@@ -739,133 +726,6 @@ uint8_t read6502(uint16_t address)
         // Read to floating point library between $5000 and $6157
         return (pgm_read_byte_near(calcRom + address - 0xD000)); // mchess ROM
     }
-    if ((address >= 0x7000) && (address <= 0x7200))
-    { // 6502 programmable calculator functions
-        switch (address)
-        {
-        // 70Ax SERIES: ASK FOR A VALUE INTO REGISTER x
-        case 0x70A1: // Load W1
-            enterflt((uint8_t)0);
-            return (0x60);
-            break;
-        case 0x70A2: // Load W2
-            enterflt(1);
-            return (0x60);
-            break;
-        case 0x70A3: // Load W3
-            enterflt(2);
-            return (0x60);
-            break;
-        case 0x70A4: // Load W4
-            enterflt(3);
-            return (0x60);
-            break;
-        case 0x70AA: // Load A
-            a = enteroperation();
-            serout(a);
-            if (a == 0)
-                setzero();
-            else
-                clearzero();
-            return (0x60);
-            break;
-
-        //70Dx SERIES: DISPLAY REGISTER x
-        case 0x70D1: // View W1
-            showflt(0);
-            return (0x60);
-            break;
-        case 0x70D2: // View W2
-            showflt(1);
-            return (0x60);
-            break;
-        case 0x70D3: // View W3
-            showflt(2);
-            return (0x60);
-            break;
-        case 0x70D4: // View W4
-            showflt(3);
-            return (0x60);
-            break;
-
-        //71xy SERIES: SWAP REG x AND REG y
-        case 0x7113: // Swap W1-W3
-            swapWreg(1, 3);
-            return (0x60);
-            break;
-        case 0x7123: // Swap W2-W3
-            swapWreg(2, 3);
-            return (0x60);
-            break;
-        case 0x7114: // Swap W1-W4
-            swapWreg(1, 4);
-            return (0x60);
-            break;
-        case 0x7124: // Swap W2-W4
-            swapWreg(2, 4);
-            return (0x60);
-            break;
-        case 0x7112: // Swap W1-W2
-            swapWreg(1, 2);
-            return (0x60);
-            break;
-        case 0x7134: // Swap W3-W4
-            swapWreg(3, 4);
-            return (0x60);
-            break;
-
-        //70xy SERIES: COPY REG x INTO REG y
-        case 0x7013: // Copy W1-W3
-            copyWreg(1, 3);
-            return (0x60);
-            break;
-        case 0x7023: // Copy W2-W3
-            copyWreg(2, 3);
-            return (0x60);
-            break;
-
-        case 0x7031: // Copy W3-W1
-                     //              serout('C');
-            copyWreg(3, 1);
-            return (0x60);
-            break;
-        case 0x7032: // Copy W3-W2
-            copyWreg(3, 2);
-            return (0x60);
-            break;
-
-        case 0x7014: // Copy W1-W4
-            copyWreg(1, 4);
-            return (0x60);
-            break;
-        case 0x7024: // Copy W2-W4
-            copyWreg(2, 4);
-            return (0x60);
-            break;
-        case 0x7034: // Copy W3-W4
-            copyWreg(3, 4);
-            return (0x60);
-            break;
-
-        case 0x7041: // Copy W4-W1
-            copyWreg(4, 1);
-            return (0x60);
-            break;
-        case 0x7042: // Copy W4-W2
-            copyWreg(4, 2);
-            return (0x60);
-            break;
-        case 0x7043: // Copy W4-W3
-            copyWreg(4, 3);
-            return (0x60);
-            break;
-
-        default:
-            serout('%');
-            serout('A');   // error code on serial port to warn of illegal address read
-            return (0x00); // DO A brk TO HALT PROGRAM IF ANY OTHER ADDRESS IS CALLED
-        }
-    }
 
     if (address >= 0xC000 && address <= 0xC571)
     {                           // Read to Microchess ROM between $C000 and $C571
@@ -875,6 +735,7 @@ uint8_t read6502(uint16_t address)
 
         return (pgm_read_byte_near(mchess + address - 0xC000)); // mchess ROM
     }
+
     // I/O functions just for Microchess: ---------------------------------------------------
     // $F003: 0 = no key pressed, 1 key pressed
     // $F004: input from user

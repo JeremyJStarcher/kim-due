@@ -21,7 +21,6 @@ uint8_t enteroperation(void);
 uint8_t curkey = 0;
 uint8_t eepromProtect = 1; // default is to write-protect EEPROM
 int blitzMode = 1;         // microchess status variable. 1 speeds up chess moves (and dumbs down play)
-uint8_t keyboardMode = 0;  // start with keyboard in KIM-1 mode. 1: calculator mode
 
 char threeHex[3][2]; // LED display
 
@@ -178,37 +177,6 @@ void interpretkeys()
         break;
     }
 
-    // round 2: keys in Calculator Mode
-    if (keyboardMode == 1)
-    { // in case of Calculator Mode
-        switch (curkey)
-        {
-        case 'C':
-            enterflt((uint8_t)0);
-            if (!((curkey >= 'C') && (curkey <= 'F')))
-                break; // if statement allows roll-through to next reg entry
-        case 'D':
-            enterflt((uint8_t)1);
-            if (!((curkey >= 'C') && (curkey <= 'F')))
-                break;
-        case 'F':
-            enteroperation();
-            break;
-        case 'E':
-            enterflt((uint8_t)2);
-            break;
-
-        case 1:
-            showflt(0);
-            break; // AD
-        case 4:
-            showflt(1);
-            break; // DA
-        case 16:
-            showflt(2);
-            break; // PC
-        }
-    }
 }
 
 // =================================================================================================
@@ -238,38 +206,6 @@ void setupUno()
     }
     Serial.println(F("KIM-UNO initialized."));
 }
-
-void driveCalcLEDs(uint8_t *numberStr, uint8_t decpt)
-{
-#if false
-    uint8_t led, col, currentBit, bitOn;
-    uint8_t digit;
-
-    // 1. initialse for driving the 6 segment LEDs
-    for (led = 0; led < 7; led++)
-    {
-        pinMode(ledSelect7[led], OUTPUT);   // set led pins to output
-        digitalWrite(ledSelect7[led], LOW); // LOW = not lit
-    }
-    // 2. switch column pins to output mode
-    for (digit = 0; digit < 7; digit++)
-    {
-        for (col = 0; col < 8; col++)
-        {
-            pinMode(aCols[col], OUTPUT);   // set pin to output
-            currentBit = (1 << (7 - col)); // isolate the current bit in loop
-            bitOn = (currentBit & dig[numberStr[digit] - 48]) == 0;
-            if (col == 0 && digit == decpt)  // show decimal point here?
-                bitOn = 0;                   // 0 being light led.
-            digitalWrite(aCols[col], bitOn); // set the bit
-        }
-        digitalWrite(ledSelect7[digit], HIGH); // Light this LED
-        delay(2);
-        digitalWrite(ledSelect7[digit], LOW); // unLight this LED
-    }
-#endif
-} // end of function
-//} // end of C segment
 
 uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
 {
@@ -368,6 +304,7 @@ void scanKeys()
         // from driving either high or low.
         digitalWrite(ledSelect[led], HIGH); // Use builtin pullup resistors
     }
+
     // 1. initialise: set columns to input with pullups
     for (col = 0; col < 8; col++)
     {
@@ -417,15 +354,6 @@ void scanKeys()
                 { // if pressed for >1sec, it's a ModeShift key
                     if ((millis() - timeFirstPressed) > 1000)
                     { // more than 1000 ms
-                        if (keyCode == 17)
-                        {                                               //it was the SST button
-                            keyboardMode = (keyboardMode == 0 ? 1 : 0); // toggle
-                                                                        //                Serial.print(F("                                      Eeprom R/O     "));
-                            Serial.print(F("                                keyboardMode: "));
-                            Serial.print(keyboardMode, DEC);
-                            SSTmode = 0;
-                            curkey = 0; // don't do anything else with this keypress
-                        }
                         if (keyCode == 9)            // it was RS button
                             curkey = '>';            // toggle eeprom write protect
                         timeFirstPressed = millis(); // because otherwise you toggle right back!
@@ -441,252 +369,3 @@ void scanKeys()
     if (noKeysScanned == 24) // no keys detected in any row, 3 rows * 8 columns = 24. used to be 28.
         prevKey = 0;         // allows you to enter same key twice
 } // end of function
-
-uint8_t enterflt(uint8_t reg) // result code -1 = cancel, 0 = good
-{
-    uint8_t fltstr[32];                // display string
-    uint8_t decpt = 0xFF, expt = 0xFF; // pointers to start of mantissa & exponent in string
-    uint8_t mntsign = 0, expsign = 0;  // 1 means negative for mantissa/exponent
-    uint8_t strpos = 0, i, j;          // strpos is position counter in string
-    uint8_t addToExp;
-    int digit;
-    uint16_t offset;
-
-    // init
-    offset = WREG_OFFSET + 8 * reg;
-    for (i = 0; i < 8; i++)
-        fltstr[i] = 65;
-
-    // input loop ---------------------------------------------------------------
-    do
-    {
-        curkey = 0;
-        driveCalcLEDs(fltstr, decpt); // xxxxxx decpt may be a problem
-        scanKeys();
-        if (curkey != 0)
-        {
-            if (curkey == '+')
-            {
-                if (expt == 0xFF)
-                { // not yet into exponent
-                    mntsign = 1;
-                    strpos = 0;
-                    fltstr[strpos++] = 64;
-                }
-                else
-                { // minus sign relates to exponent
-                    expsign = 1;
-                    strpos = expt;
-                    fltstr[strpos++] = 64;
-                }
-            }
-            if ((curkey >= '0') && (curkey <= '9'))
-            {
-                // temp protection against entering 0.025, which breaks this code.
-                // temp fix: do not allow entering a 0 after 0.
-                if ((curkey == '0') && (decpt == (strpos - 1)) && (fltstr[strpos - 1] == '0'))
-                {
-                    // do nothing, that's the temp fix
-                }
-                else
-                    // end of temp bug fix
-                    fltstr[strpos++] = curkey;
-            }
-            if (curkey == 'B')
-            {
-                expt = strpos;
-                fltstr[strpos++] = 62;
-            }
-            if (curkey == 'A')
-            {
-                decpt = strpos - 1;
-            }
-
-            fltstr[strpos] = 65;
-        }
-    } while ((strpos < 8) && (curkey != 7) && (curkey != 19) && (1 != (curkey >= 'C') && (curkey <= 'F')));
-
-    if (curkey == 19)
-        return (-1); // cancel
-
-    // parse into 8 byte fltpt65 format -----------------------------------------------------------------
-    // Ugly, horrible code. But running out of Arduino memory means C library calls must be avoided.
-
-    if (expt == 0xFF) // if no E was entered, let it start at end of string and be 0 length
-        expt = strpos;
-    if (decpt == 0xFF) // if no dec pt was entered, put it at end of mantissa, just before the E
-        decpt = expt - 1;
-    addToExp = decpt - mntsign; // normalise mantissa: how much to add to exp to have 1.2345 format
-
-    // Exponent 3: parse and adjust exponent value to get normalised 1.23 format using addToExp
-    if ((strpos - 1) > expt)                                                              // user at least entered 1 exp digit
-        digit = (expsign == 1 ? -1 : 1) * ((int)fltstr[strpos - 1] - 48) + (int)addToExp; //expsign*-1: deal with negative exps
-    else
-        digit = (int)addToExp; // user entered number without exp. So exp is 0.
-    if (digit < 0)
-        digit = -(digit);                                // do not want to use abs() function-arduino out of memory space :)
-    RAM[offset + 1] = (digit <= 9 ? digit : digit - 10); // store adjusted exp digit
-    addToExp = (digit <= 9 ? 0 : 1);                     // simple carry mechanism: add could overflow to 2nd sigit
-
-    // Exponent 2: same thing.
-    if ((strpos - 2) > expt)                                                              // user entered a second exp digit
-        digit = (expsign == 1 ? -1 : 1) * ((int)fltstr[strpos - 2] - 48) + (int)addToExp; //expsign*-1: deal with negative exps
-    else
-        digit = (int)addToExp; // user entered number without exp. So exp is 0.
-    if (digit < 0)
-        digit = -(digit);                                      // do not want to use abs() function-arduino out of memory space :)
-    RAM[offset + 1] |= (digit <= 9 ? digit : digit - 10) << 4; // store adjusted exp digit in upper nibble
-    addToExp = (digit <= 9 ? 0 : 1);                           // simple carry mechanism: add could overflow to 2nd sigit
-
-    // Exponent 1: same thing.
-    if ((strpos - 3) > expt)                                    // user entered a second exp digit
-        digit = ((int)fltstr[strpos - 3] - 48) + (int)addToExp; // there is no carry or add to exp in digit 3
-    else
-        digit = (int)addToExp; // user entered number without exp. So exp is 0.
-    if (digit < 0)
-        digit = -(digit);                                // do not want to use abs() function-arduino out of memory space :)
-    RAM[offset + 0] = (digit <= 9 ? digit : digit - 10); // store adjusted exp digit in lower nibble
-
-    // Sign bits
-    RAM[offset + 0] |= ((mntsign << 7) | (expsign << 6));
-    //	printf("%u %u ", (RAM[offset+0] & 0xF0)>>4, RAM[offset+0] & 0x0F);
-    //	printf("%u %u \n", (RAM[offset+1] & 0xF0)>>4, RAM[offset+1] & 0x0F);
-
-    // print mantissa
-    j = mntsign;
-    for (i = 0; i < 12; i++)
-    {
-        if (j < expt)
-            RAM[offset + 2 + i] = (fltstr[j] - 48) << 4;
-        else
-            RAM[offset + 2 + i] = 0;
-        j++;
-
-        if (j < expt)
-            RAM[offset + 2 + i] |= (fltstr[j] - 48);
-        j++;
-
-        //		printf("%u %u ", (RAM[offset+2+i] & 0xF0)>>4, RAM[offset+2+i] & 0x0F);
-    }
-    //	printf("\n");
-    return (curkey); // return value, if not -1, can be used to jump to next register value entry call
-} // end function
-
-uint8_t showflt(uint8_t reg) // returns location of decimal point in string
-{
-    uint8_t fltstr[32];               // display string
-    uint8_t mntsign = 0, expsign = 0; // 1 means negative for mantissa/exponent
-    uint8_t cnt, expt, i;             // decpt,
-    uint16_t offset;
-    int exp, decpt;
-
-    // init
-    offset = WREG_OFFSET + 8 * reg;
-    for (i = 0; i < 8; i++)
-        fltstr[i] = '_'; // no longer necessary I think
-    // calculate exponent
-    exp = (RAM[offset + 1] & 0x0F) + 10 * ((RAM[offset + 1] & 0xF0) >> 4) + 100 * (RAM[offset + 0] & 0x0F);
-    //	printf("\n\nexp = %d\n", exp);
-
-    // determine maximum exponent value we can show as normal number without E
-    mntsign = (RAM[offset + 0] & 0x80) >> 7; // negative mantissa: 1
-    expsign = (RAM[offset + 0] & 0x40) >> 6; // negative exponent: 1
-    decpt = (mntsign == 0 ? 0 : 1);          // dec point is after digit0 (+ values) or digit1 (- values)
-
-    // with pos numbers, any E between 0 and 7 can be polished away. If there's a '-', one less
-    if ((exp > 0) && (exp < (7 - mntsign)) && (expsign == 0))
-    {
-        // yes, we can polish E away
-        decpt += exp;
-        expt = 0;
-    }
-    else
-    {
-        // we need to show exponent, how many digits?
-        expt = 0;
-        if (exp > 0)
-        {
-            expt = 2; //1;
-            fltstr[6] = (RAM[offset + 1] & 0x0F) + 48;
-        }
-        if (exp > 9)
-        {
-            expt = 3; //2;
-            fltstr[5] = (uint8_t)((RAM[offset + 1] & 0xF0) >> 4) + (uint8_t)48;
-        }
-        if (exp > 90)
-        {
-            expt = 4; //3;
-            fltstr[4] = (RAM[offset + 0] & 0x0F) + 48;
-        }
-        fltstr[7 - expt] = (expsign == 1 ? 64 : 62);
-    }
-
-    // fill string with mantissa
-    cnt = 0;
-    if (mntsign == 1)
-        fltstr[0] = 64;
-
-    for (i = mntsign; i < (7 - expt); i = i + 2)
-    {
-        fltstr[i] = (uint8_t)((RAM[offset + 2 + cnt] & 0xF0) >> 4) + (uint8_t)48;
-        printf(" %c ", (uint8_t)((RAM[offset + 2 + cnt] & 0xF0) >> 4) + (uint8_t)48);
-        if ((i + 1) < (7 - expt))
-        { // bug fix 20141007
-            fltstr[i + 1] = (RAM[offset + 2 + cnt] & 0x0F) + 48;
-            printf(" %c   ", (RAM[offset + 2 + cnt] & 0x0F) + 48);
-        }
-        cnt++;
-    }
-    fltstr[7] = 0x00; // string terminator
-
-    curkey = 0;
-
-    do
-    {
-        driveCalcLEDs(fltstr, decpt);
-        scanKeys();
-    } while (curkey == 0);
-
-    if ((curkey < 'C') || (curkey > 'F'))
-        curkey = 0; // to clear any keypresses before returning to KIM
-
-    return decpt; // pointers to start of mantissa & exponent in string
-} // end function
-
-uint8_t enteroperation(void) // result code -1 = cancel, 0 = good
-{
-    uint8_t fltstr[8];     // display string
-    uint8_t strpos = 4, i; // strpos is position counter in string
-
-    // init
-    for (i = 0; i < 8; i++)
-        fltstr[i] = 66;
-    fltstr[4] = 65;
-    fltstr[5] = 65;
-
-    // input loop ---------------------------------------------------------------
-    do
-    {
-        curkey = 0;
-        driveCalcLEDs(fltstr, 5);
-        scanKeys();
-        if (curkey != 0)
-        {
-            if ((curkey >= 48) && (curkey <= 57)) //only allow dec digits
-                fltstr[strpos++] = curkey;
-
-            fltstr[strpos] = 65;
-        }
-    } while ((strpos < 6) && (curkey != 7) && (curkey != 19));
-
-    if (curkey == 19)
-        return (-1); // cancel
-
-    RAM[0x00F3] = (fltstr[4] - 48) * 10 + (fltstr[5] - 48); // operation to go into 6502 A register
-    RAM[0x00EF] = (uint8_t)0xE0;
-    RAM[0x00F0] = (uint8_t)0x6F; // set PC register to fltpt65 start address (0x6FE0, not 0x5000, we need to start with a JSR and end with a BRK)
-    curkey = 16;                 // PC
-
-    return (RAM[0x00F3]);
-}

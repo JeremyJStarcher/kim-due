@@ -12,7 +12,6 @@ void nmi6502();
 void initKIM(void);
 void loadTestProgram(void);
 extern void driveLEDs();
-extern void driveCalcLEDs(uint8_t reg);
 void scanKeys();
 void nmi6502(void);
 
