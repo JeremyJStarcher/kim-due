@@ -17,7 +17,16 @@
 #include "boardhardware.h"
 #include "builtin_display.h"
 
-#define EMULATE_KEYBOARD
+// Option 1:
+//   Emulate all of the keyboard handling by hijacking the keyboard ROM
+//   routines and replacing them with native code and return the right
+//   values back.  This is the absolute fastest approach.
+// Option 2:
+//   Mimic the RIOT chip and play with the ports. The ROM will see it
+//   like real hardware.
+//   MUCH slower but slightly more compatible.
+
+// #define EMULATE_KEYBOARD
 
 #define aIoPAD 0x1740
 #define aIoPADD 0x1741
@@ -502,17 +511,21 @@ uint8_t read6502(uint16_t address)
         return (0);
     }
 #else
-        static uint8_t lastKey = 0xFF;
+        // The ROM needs the button held down for a certain length of
+        // time as debounce technique.  Fake holding the button down.
+        const uint8_t HOLDBUTTON_DELAY = 0x10;
+        static uint8_t ctr = HOLDBUTTON_DELAY;
         uint8_t regMDR = 0;
 
-        uint8_t keyValue = getKIMkey();
-        if (keyValue != lastKey)
+        ctr--;
+        if (ctr == 0)
         {
-            lastKey = keyValue;
-            Serial.print("keyValue - ");
-            Serial.println(keyValue);
+            ctr = HOLDBUTTON_DELAY;
+            clearkey();
+            return (0xFF);
         }
 
+        uint8_t keyValue = getKIMkey();
         switch (address)
         {
         case aIoPAD:
@@ -565,31 +578,25 @@ uint8_t read6502(uint16_t address)
             }
 
             regMDR &= ~ioPADD;
-#if 0
-            if (keyValue != 15)
-            {
-                Serial.print("keyValue - ");
-                Serial.print(keyValue);
-                Serial.print("   regMDR - ");
-                Serial.print(regMDR);
-                Serial.println("");
-            }
-#endif
-
             break;
+
         case aIoPADD:
             regMDR = ioPADD;
             break;
+
         case aIoPBD:
             regMDR = ioPBD;
             regMDR &= ~ioPBDD;
             break;
+
         case aIoPBDD:
             regMDR = ioPBDD;
             break;
+
         case 0x1706:
             //  regMDR = ~((UInt8)hwCycles);
             break;
+
         default:
             regMDR = 0xff;
             break;
