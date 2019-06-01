@@ -443,8 +443,8 @@ uint8_t read6502(uint16_t address)
 {
     uint8_t tempval = 0;
 
-    if (address < 0x0400)
-    { // 0x0000-0x0400 is RAM
+    if (address < ONBOARD_RAM)
+    {
         return (RAM[address]);
     }
 
@@ -789,7 +789,7 @@ uint8_t read6502(uint16_t address)
 
 void write6502(uint16_t address, uint8_t value)
 {
-    if (address < 0x0400)
+    if (address < ONBOARD_RAM)
     {
         RAM[address] = value;
         return;
