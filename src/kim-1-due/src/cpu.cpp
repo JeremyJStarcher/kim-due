@@ -24,7 +24,7 @@
 
 static uint8_t ioPAD = 0;     // Port A data register
 static uint8_t ioPADD = 0xFF; // Port A data direction register
-static uint8_t ioPDB = 0;     // port B data register
+static uint8_t ioPBD = 0;     // port B data register
 static uint8_t ioPBDD = 0;    // Port B data direction register
 
 void handle()
@@ -32,7 +32,7 @@ void handle()
     uint8_t led;
     uint8_t code;
 
-    led = (ioPDB - 9) >> 1;
+    led = (ioPBD - 9) >> 1;
 
     // My guess is that some normally run routine
     // set the ioPADD value back to a more sane state
@@ -858,12 +858,17 @@ void write6502(uint16_t address, uint8_t value)
 
             break;
         case aIoPADD:
+            if (0)
+            {
+                Serial.print("Setting aIOPADD to ");
+                Serial.println(value);
+            }
             ioPADD = value;
             handle();
 
             break;
         case aIoPBD:
-            ioPDB = value & ioPBDD;
+            ioPBD = value & ioPBDD;
             handle();
 
             break;
