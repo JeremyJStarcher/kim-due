@@ -44,17 +44,7 @@ void handle()
     uint8_t code;
 
     led = (ioPBD - 9) >> 1;
-
-    // My guess is that some normally run routine
-    // set the ioPADD value back to a more sane state
-    // some function that we are totally bypassing.
-    //
-    // So just ignore it for now and the
-    // 'Light the LED Demo' runs
-
-    //code = ioPAD & ioPADD;
-
-    code = ioPAD; // & ioPADD;
+    code = ioPAD & ioPADD;
     driveLED(led, code);
 }
 

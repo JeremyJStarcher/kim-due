@@ -105,7 +105,8 @@ void driveLEDs()
 void driveLED(uint8_t led, uint8_t n)
 {
     // Cheap anti-flicker
-    if (n == 0) {
+    if (n == 0)
+    {
         // return;
     }
 
