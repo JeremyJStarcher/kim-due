@@ -513,96 +513,102 @@ uint8_t read6502(uint16_t address)
 #else
         // The ROM needs the button held down for a certain length of
         // time as debounce technique.  Fake holding the button down.
-        const uint8_t HOLDBUTTON_DELAY = 0x10;
-        static uint8_t ctr = HOLDBUTTON_DELAY;
-        uint8_t regMDR = 0;
+        const uint8_t HOLDBUTTON_DELAY = 0x08; // Found by trial and error
+        static uint8_t ctr = 0;
+        static bool holding_key_down = false;
+        static uint8_t last_key_value;
 
-        ctr--;
-        if (ctr == 0)
+        uint8_t key_value;
+        uint8_t ret = 0;
+
+#if 0
+        Serial.println("");
+        Serial.print("holding_key_down ");
+        Serial.print(holding_key_down);
+
+        Serial.print(" ctr ");
+        Serial.print(ctr);
+
+        Serial.print(" last_key_value ");
+        Serial.print(last_key_value);
+#endif
+
+        if (holding_key_down)
         {
-            ctr = HOLDBUTTON_DELAY;
-            clearkey();
-            return (0xFF);
+            key_value = last_key_value;
+
+            ctr--;
+            if (ctr == 0)
+            {
+                holding_key_down = false;
+                clearkey();
+            }
+        }
+        else
+        {
+            key_value = getKIMkey();
+            last_key_value = key_value;
+            if (key_value != 255)
+            {
+                holding_key_down = true;
+                ctr = HOLDBUTTON_DELAY;
+            }
         }
 
-        uint8_t keyValue = getKIMkey();
+#if 0
+        Serial.print(" keyValue ");
+        Serial.print(keyValue);
+#endif
+
         switch (address)
         {
         case aIoPAD:
             switch (ioPBD & 0x07)
             {
-                /**
-                 * How keypad keypresses are detected:
-                 *
-                 * The value of bits 2 & 1 in ioPBD enables scanning different
-                 * "rows" (electronic arrangement, not physical) of the keyboard.
-                 * (The remaining bits of ioPBD are ignored, with the exception
-                 * of bit 0, which is expected to be set to 1.) The keys in a
-                 * given row are mapped to bits in ioPAD. A 1-bit corresponds to
-                 * an up key, and a 0-bit corresponds to a depressed key. The
-                 * rows and keys are mapped thus:
-                 *
-                 *   value of ioPBD
-                 *   bits 2 and 1 -> 00     01     10     11
-                 *                   |      |      |      |
-                 *             enables  enables  enables  enables
-                 *                   |      |      |      |
-                 *      bit          |      |      |      |     value of ioPAD
-                 *   assignment    row0   row1   row2   row3   when key pressed
-                 *   ----------    ----   ----   ----   ----   ----------------
-                 *   ioPAD-bit6      0      7      E              1011 1111
-                 *   ioPAD-bit5      1      8      F              1101 1111
-                 *   ioPAD-bit4      2      9     AD              1110 1111
-                 *   ioPAD-bit3      3      A     DA              1111 0111
-                 *   ioPAD-bit2      4      B      +              1111 1011
-                 *   ioPAD-bit1      5      C     GO              1111 1101
-                 *   ioPAD-bit0      6      D     PC     SST      1111 1110
-                 *                 -------------------------
-                 *                        keypad keys
-                 */
+                /* See the keyboard.cpp for details */
             case 1:
-                regMDR = ~(0x40 >> keyValue);
+                ret = ~(0x40 >> key_value);
                 break;
             case 3:
-                regMDR = ~(0x40 >> (keyValue - 7));
+                ret = ~(0x40 >> (key_value - 7));
                 break;
             case 5:
-                regMDR = ~(0x40 >> (keyValue - 14));
+                ret = ~(0x40 >> (key_value - 14));
                 break;
             case 7:
-                regMDR = useKeyboardLed ? 0xFF : 0xFE;
+                ret = useKeyboardLed ? 0xFF : 0xFE;
                 break;
             default:
-                regMDR = 0xFF;
+                ret = 0xFF;
                 break;
             }
 
-            regMDR &= ~ioPADD;
+            ret &= ~ioPADD;
             break;
 
         case aIoPADD:
-            regMDR = ioPADD;
+            ret = ioPADD;
             break;
 
         case aIoPBD:
-            regMDR = ioPBD;
-            regMDR &= ~ioPBDD;
+            ret = ioPBD;
+            ret &= ~ioPBDD;
             break;
 
         case aIoPBDD:
-            regMDR = ioPBDD;
+            ret = ioPBDD;
             break;
 
         case 0x1706:
-            //  regMDR = ~((UInt8)hwCycles);
+            //  ret = ~((UInt8)hwCycles);
             break;
 
         default:
-            regMDR = 0xff;
+            ret = 0xff;
             break;
         }
 
-        return regMDR;
+        return ret;
     }
 
 #endif
