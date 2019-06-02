@@ -63,9 +63,6 @@ extern uint8_t eepromread(uint16_t eepromaddress);
 extern void eepromwrite(uint16_t eepromaddress, uint8_t bytevalue);
 #endif
 
-//#define WREG_OFFSET 0x03DF
-#define WREG_OFFSET 0x0360
-
 extern char threeHex[3][2]; // buffer for 3 hex digits
 extern int blitzMode;       // status variable only for microchess
 
@@ -168,49 +165,6 @@ uint8_t RAM002[64]; // RAM from 6530-002  0x17C0-0x17FF, free for user except 0x
 //               FFFC, FFFD - RST Vector
 //               FFFE, FFFF - IRQ Vector
 // Application roms (mchess) are above standard 8K of KIM-1
-
-uint8_t getRegister(uint8_t reg, char *inVal)
-{
-    uint16_t offset;
-
-    offset = WREG_OFFSET + reg * 8; // place in RAM for W1/2/3/4 registers
-
-    //  print in most compact form
-    // 2. do we print a leading '-' cos mantissa negative?
-    if ((RAM[0 + offset] & (uint8_t)128) == 0)
-    { // mantissa positive, skip the + to save a digit
-        sprintf(inVal, "%c%c%c%c%c%c%c",
-                // mantissa sign
-                //(RAM[0+offset]&(uint8_t)128)==0?'+':'-',
-                // mantissa
-                ((RAM[2 + offset] & 0xF0) >> 4) + (uint8_t)48, (RAM[2 + offset] & 0x0F) + (uint8_t)48,
-                ((RAM[3 + offset] & 0xF0) >> 4) + (uint8_t)48, (RAM[3 + offset] & 0x0F) + (uint8_t)48,
-                // exponent sign
-                (RAM[0 + offset] & (uint8_t)64) == 0 ? (uint8_t)62 : (uint8_t)64, // E, or G is printed as -
-                                                                                  // exponent
-                /*!!!*/                                                           //(RAM[0+offset]&0x0F) + (uint8_t)48,
-                    ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                (RAM[1 + offset] & 0x0F) + (uint8_t)48);
-        return 0; // light dec point on first digit
-    }
-    else
-    {                                    // mantissa negative, add a minus
-        sprintf(inVal, "%c%c%c%c%c%c%c", //G printed as -
-                // mantissa sign
-                64, // G printed as -
-                // mantissa
-                ((RAM[2 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                (RAM[2 + offset] & 0x0F) + (uint8_t)48,
-                ((RAM[3 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                // exponent sign
-                (RAM[0 + offset] & (uint8_t)64) == 0 ? (uint8_t)62 : (uint8_t)64, //E or G printed as -
-                // exponent
-                ((RAM[1 + offset] & 0xF0) >> 4) + (uint8_t)48,
-                (RAM[1 + offset] & 0x0F) + (uint8_t)48);
-
-        return 1; // light dec point on second digit (given 1st digit is a -)
-    }
-}
 
 // --- ROM CODE SECTION ------------------------------------------------------------
 // ROM1: KIM-1 ROM002 (monitor main code)                                 $17C0
@@ -884,25 +838,6 @@ void write6502(uint16_t address, uint8_t value)
     }
     serout('%');
     serout('4'); // error code 4 - write to ROM
-}
-
-// two functions for fltpt65 support: copy/swap W registers
-void copyWreg(uint8_t a, uint8_t b)
-{
-    uint8_t i;
-    for (i = 0; i < 8; i++)
-        RAM[WREG_OFFSET + 8 * (b - 1) + i] = RAM[WREG_OFFSET + 8 * (a - 1) + i];
-}
-
-void swapWreg(uint8_t a, uint8_t b)
-{
-    uint8_t i, buffer;
-    for (i = 0; i < 8; i++)
-    {
-        buffer = RAM[WREG_OFFSET + 8 * (a - 1) + i];
-        RAM[WREG_OFFSET + 8 * (a - 1) + i] = RAM[WREG_OFFSET + 8 * (b - 1) + i];
-        RAM[WREG_OFFSET + 8 * (b - 1) + i] = buffer;
-    }
 }
 
 //a few general functions used by various other functions
