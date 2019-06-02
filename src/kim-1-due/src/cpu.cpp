@@ -44,7 +44,7 @@ void handle()
     uint8_t code;
 
     led = (ioPBD - 9) >> 1;
-    code = ioPAD & ioPADD;
+    code = ioPAD /* & ioPADD */;
     driveLED(led, code);
 }
 
