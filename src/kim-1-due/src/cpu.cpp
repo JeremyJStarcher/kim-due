@@ -60,7 +60,7 @@ void handle()
     // 020A   4C 0A 02   JMP $020A
     // 020D              .END
 
-    code = ioPAD /* & ioPADD */;
+    code = ioPAD & ioPADD;
     driveLED(led, code);
 }
 
