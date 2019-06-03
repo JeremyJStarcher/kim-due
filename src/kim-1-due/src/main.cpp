@@ -37,3 +37,7 @@ void loop()
         interpretkeys();
     }
 }
+
+void setupMax()
+{
+}

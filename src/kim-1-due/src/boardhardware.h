@@ -14,13 +14,11 @@
 #define ONBOARD_RAM 1024
 #endif
 
-#define BOARD_LED_I2C true
+#define BOARD_LED_MAX7219 true
 #define BOARD_WIRED_LED false
 
-#if BOARD_LED_I2C
-#define LED_I2C_DATA 16
-#define LED_I2C_CLK 15
-#define LED_I2C_CS 17
+#if BOARD_LED_MAX7219
+#define LED_CS 15
 #endif
 
 extern byte aCols[8];

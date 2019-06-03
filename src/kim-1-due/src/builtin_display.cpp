@@ -1,4 +1,6 @@
-#include <LedControl.h>
+#include <SPI.h>
+#include "./MAX7219/src/bitBangedSPI.h"
+#include "./MAX7219/src/MAX7219.h"
 
 #include "builtin_display.h"
 #include "cpu.h"
@@ -34,23 +36,16 @@ byte dig[19] = {
     0b00000000  //i printed as <space>
 };
 
-#if BOARD_LED_I2C
-LedControl lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
+#if BOARD_LED_MAX7219
 
-static int t_8_6[] = {7, 6, 5, 4, 2, 1};
+MAX7219 display(1, LED_CS);
+//static int t_8_6[] = {7, 6, 5, 4, 2, 1};
+static uint8_t t_8_6[] = {0, 1, 2, 3, 5, 6};
 
 void init_display()
 {
-    lc = LedControl(LED_I2C_DATA, LED_I2C_CLK, LED_I2C_CS, 2);
-
-    int devices = lc.getDeviceCount();
-    for (int address = 0; address < devices; address++)
-    {
-        /*The MAX72XX is in power-saving mode on startup*/
-        lc.shutdown(address, false);
-        lc.setIntensity(address, 8);
-        lc.clearDisplay(address);
-    }
+    display.begin();
+    display.setIntensity(6);
 
     convert_led_pattern();
 
@@ -61,27 +56,17 @@ void init_display()
         0b00011100, // u
         0b00010000, // i
         0b00010101, // n
-        0b00011101  // o
+        0b00011101, // o
+        0b00000000  // <blank>
     };
 
-    int l = 7;
-    for (int i = 0; i < l; i++)
+    for (int i = 0; i < sizeof(logo) / sizeof(logo[0]); i++)
     {
-        lc.setRow(0, l - i, logo[i]);
+        display.sendRawByte(i, logo[i]);
         delay(delaytime);
     }
 
-    lc.clearDisplay(0);
-
-#if 0
-    delay(delaytime);
-
-    for (size_t i = 0; i < sizeof dig / sizeof dig[0]; i++)
-    {
-        lc.setRow(0, 0, dig[i]);
-        delay(delaytime);
-    }
-#endif
+    clear_display();
 }
 
 void driveLEDs()
@@ -97,7 +82,7 @@ void driveLEDs()
             ledNo = byt * 2 + i;
             char bcd = threeHex[byt][i];
             out = dig[(int)bcd];
-            lc.setRow(0, t_8_6[ledNo], out);
+            display.sendRawByte(0, t_8_6[ledNo], out);
         }
     }
 }
@@ -107,25 +92,24 @@ void driveLED(uint8_t led, uint8_t n)
     // Cheap anti-flicker
     if (n == 0)
     {
-        // return;
+        return;
     }
 
-    lc.setRow(0, t_8_6[led], xlate_led_pattern[n]);
+    // Pick off just the bits we need
+    led &= 0b00000111;
+
+    if (led >= (sizeof(t_8_6) / sizeof(t_8_6[0])))
+    {
+        return;
+    }
+
+    size_t real_led = t_8_6[led];
+    display.sendRawByte(real_led, xlate_led_pattern[n]);
 }
 
 void clear_display()
 {
-    int ledNo;
-    int byt, i;
-
-    for (byt = 0; byt < 3; byt++)
-    {
-        for (i = 0; i < 2; i++)
-        {
-            ledNo = byt * 2 + i;
-            lc.setRow(0, t_8_6[ledNo], 0);
-        }
-    }
+    display.sendString("");
 }
 
 #endif
