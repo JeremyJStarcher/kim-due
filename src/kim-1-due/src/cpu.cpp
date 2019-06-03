@@ -44,7 +44,23 @@ void handle()
     uint8_t code;
 
     led = (ioPBD - 9) >> 1;
-    code = ioPAD & ioPADD;
+
+    // There is a software demo that fails if we include
+    // the ioPADD.
+    // trouble is, I'm not sure if the demo is actually working
+    // or not, since it was written for a KIM replica, and not a
+    // real KIM.
+    // However, leaving it out doesn't seem to cause any harm.
+
+    //                 * = 0200
+    // 0200   A9 FF      LDA #$FF
+    // 0202   8D 40 17   STA $1740
+    // 0205   A9 09      LDA #$09
+    // 0207   8D 42 17   STA $1742
+    // 020A   4C 0A 02   JMP $020A
+    // 020D              .END
+
+    code = ioPAD /* & ioPADD */;
     driveLED(led, code);
 }
 
