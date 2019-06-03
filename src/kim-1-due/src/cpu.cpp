@@ -8,7 +8,12 @@
 
 #include <stdio.h>
 #include <stdint.h>
+
+#ifdef TARGETWEB
+#include "fake-progmen.h"
+#else
 #include <avr/pgmspace.h>
+#endif
 
 #include "roms/cassette.h"
 #include "roms/monitor.h"
@@ -897,7 +902,6 @@ void reset6502()
 // this is what user has to enter manually when powering KIM on. Why not do it here.
 void initKIM()
 {
-
     uint16_t i;
 
     RAM002[(0x17FA) - (0x17C0)] = 0x00;

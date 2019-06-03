@@ -1,7 +1,12 @@
 #ifndef CPU_INCLUDE_H
 #define CPU_INCLUDE_H
 
+#ifndef TARGETWEB
 #include "Arduino.h"
+#endif
+
+#include <stdint.h>
+
 #include "boardhardware.h"
 
 uint16_t getpc();

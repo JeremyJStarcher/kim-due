@@ -1,7 +1,11 @@
 #ifndef KIM_HARDWARE_H
-#define KIM_HARDARE_H
+#define KIM_HARDWARE_H
 
+#ifndef TARGETWEB
 #include <Arduino.h>
+#endif
+
+#include <stdint.h>
 
 void setupUno(void);
 int freeRam(void);

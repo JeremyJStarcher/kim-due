@@ -1,18 +1,27 @@
-#include <SPI.h>
-#include "./MAX7219/src/bitBangedSPI.h"
-#include "./MAX7219/src/MAX7219.h"
+#include <stdint.h>
+#include <stdio.h>
 
 #include "builtin_display.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "boardhardware.h"
 
+#if BOARD_LED_MAX7219
+#include <SPI.h>
+#include "./MAX7219/src/bitBangedSPI.h"
+#include "./MAX7219/src/MAX7219.h"
+#endif
+
+#ifdef TARGETWEB
+#include <emscripten/emscripten.h>
+#endif
+
 void convert_led_pattern(void);
 
 const int delaytime = 150;
 static uint8_t xlate_led_pattern[256];
 
-byte dig[19] = {
+uint8_t dig[19] = {
     // bits     6543210
     // digits   abcdefg
     0b01111110, //0
@@ -36,10 +45,36 @@ byte dig[19] = {
     0b00000000  //i printed as <space>
 };
 
+#ifdef TARGETWEB
+void init_display()
+{
+    uint8_t logo[]{
+        0b01110111, // A
+        0b00000101, // r
+        0b00111101, // d
+        0b00011100, // u
+        0b00010000, // i
+        0b00010101, // n
+        0b00011101, // o
+        0b00000000  // <blank>
+    };
+
+    for (int i = 0; i < sizeof(logo) / sizeof(logo[0]); i++)
+    {
+        // var k = [i, logo[i]].join(", ");
+        EM_ASM({
+            setLed($0, $1);
+        }, i, logo[i]);
+    }
+
+    //  clear_display();
+}
+
+#endif
+
 #if BOARD_LED_MAX7219
 
 MAX7219 display(1, LED_CS);
-//static int t_8_6[] = {7, 6, 5, 4, 2, 1};
 static uint8_t t_8_6[] = {0, 1, 2, 3, 5, 6};
 
 void init_display()
@@ -49,7 +84,7 @@ void init_display()
 
     convert_led_pattern();
 
-    byte logo[]{
+    uint8_t logo[]{
         0b01110111, // A
         0b00000101, // r
         0b00111101, // d
