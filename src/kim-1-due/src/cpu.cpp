@@ -82,13 +82,11 @@ extern void eepromwrite(uint16_t eepromaddress, uint8_t bytevalue);
 extern char threeHex[3][2]; // buffer for 3 hex digits
 extern int blitzMode;       // status variable only for microchess
 
-extern void printhex(uint16_t val);
 extern void serout(uint8_t value);
 extern void serouthex(uint8_t val);
 extern uint8_t getAkey(void); // for serial port get normal ASCII keys
 extern uint8_t getKIMkey();   // for emulation of KIM keypad
 extern void clearkey(void);
-extern void scanKeys();
 
 uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
 uint8_t iii;                   // counter for various purposes, declared here to avoid in-function delay in 6502 functions.
