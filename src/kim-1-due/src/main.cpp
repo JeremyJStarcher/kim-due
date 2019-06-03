@@ -33,7 +33,7 @@ void loop()
 
     scanKeys();
     if (xkeyPressed() != 0)
-    { //KIM Uno board input?
+    {
         interpretkeys();
     }
 }
