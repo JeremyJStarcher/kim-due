@@ -11,10 +11,6 @@
 #include <EEPROM.h>
 #endif
 
-uint8_t enterflt(uint8_t reg);
-uint8_t showflt(uint8_t reg);
-uint8_t enteroperation(void);
-
 //#define CH2_SPEAKERPIN 9
 #define WREG_OFFSET 0x0360
 
