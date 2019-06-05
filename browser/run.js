@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		ledbar.appendChild(c);
 	}
 
-
 	const run = () => {
 		setTimeout(() => {
 			try {
@@ -41,7 +40,7 @@ function setLed(pos, data) {
 
 	const s = "gfedcba".split("").map((a, i) => {
 		const seg = el.getElementById(a);
-		seg.style.fill = (data & 1 << i) ? "red" : "#5f0000";
+		seg.style.fill = (data & 1 << i) ? "red" : "#3f0020";
 	});
 }
 
@@ -58,11 +57,8 @@ function wireupKeyboard() {
 			e.preventDefault();
 
 			const ch = e.currentTarget.getAttribute("data-asc");
-			const v = ch.charCodeAt(0);
-
-			console.log("ch", ch, "value", v, typeof v);
-			_injectkey(+ch & 0x7F);
-
+			const v = ch.charCodeAt(0) & 0x7F;
+			_injectkey(ch);
 		});
 	});
 }

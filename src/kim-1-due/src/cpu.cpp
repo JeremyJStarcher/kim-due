@@ -6,7 +6,7 @@
    Tidied up by Mark VandeWettering to make it compile with platformio.
 */
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 #ifdef TARGETWEB

@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #endif
 
-
 #include <stdint.h>
 
 #include "builtin_display.h"
@@ -30,12 +29,12 @@ char threeHex[3][2]; // LED display
 
 void serout(uint8_t val)
 {
-//    Serial.write(val);
+    //    Serial.write(val);
 }
 
 void serouthex(uint8_t val)
 {
-//    Serial.print(val, HEX);
+    //    Serial.print(val, HEX);
 }
 
 uint8_t getAkey()
@@ -50,8 +49,8 @@ void clearkey()
 
 void printhex(uint16_t val)
 {
-//    Serial.print(val, HEX);
-//    Serial.println();
+    //    Serial.print(val, HEX);
+    //    Serial.println();
 }
 
 // getKIMkey() translates ASCII keypresses to codes the KIM ROM expects.
@@ -74,15 +73,15 @@ uint8_t getKIMkey()
         return (curkey - 'a' + 10);
 
     if (curkey == VKEY_AD)   // ctrlA
-        return (0x10); // AD address mode
+        return (0x10);       // AD address mode
     if (curkey == VKEY_DA)   // ctrlD
-        return (0x11); // DA data mode
+        return (0x11);       // DA data mode
     if (curkey == VKEY_PLUS) // +
-        return (0x12); // step
+        return (0x12);       // step
     if (curkey == VKEY_GO)   // ctrlG
-        return (0x13); // GO
-    if (curkey == VKEY_PC)  // ctrlP
-        return (0x14); // PC mode
+        return (0x13);       // GO
+    if (curkey == VKEY_PC)   // ctrlP
+        return (0x14);       // PC mode
     // curkey==ctrlR for hard reset (/RST) (KIM's RS key) is handled in main loop!
     // curkey==ctrlT for ST key (/NMI) is handled in main loop!
     return (curkey); // any other key, should not be hit but ignored by KIM
@@ -132,48 +131,53 @@ void interpretkeys()
     case VKEY_RS: // CtrlR = RS key = hardware reset (RST)
         reset6502();
         clearkey();
- //       Serial.print("RSet\n");
+        //       Serial.print("RSet\n");
         break;
+
     case VKEY_ST: // CtrlT = ST key = throw an NMI to stop execution of user program
         nmi6502();
         clearkey();
- //       Serial.print("STop\n");
+        //       Serial.print("STop\n");
         break;
+
     case VKEY_SST_OFF: // SST off
         SSTmode = 0;
         clearkey();
- //       Serial.print(F("                                      SST OFF         "));
+        //       Serial.print(F("                                      SST OFF         "));
         break;
+
     case VKEY_SST_ON: // SST on
         SSTmode = 1;
         clearkey();
-  //      Serial.print(F("                                      SST ON          "));
+        //      Serial.print(F("                                      SST ON          "));
         break;
+
     case VKEY_TOGGLE_SERIAL_MODE: // TAB pressed, toggle between serial port and onboard keyboard/display
         if (useKeyboardLed == 0)
         {
             useKeyboardLed = 1;
-  //          Serial.print(F("                    Keyboard/Hex Digits Mode "));
+            //          Serial.print(F("                    Keyboard/Hex Digits Mode "));
         }
         else
         {
             useKeyboardLed = 0;
-  //          Serial.print(F("                        Serial Terminal Mode         "));
+            //          Serial.print(F("                        Serial Terminal Mode         "));
         }
         reset6502();
         clearkey();
         break;
+
     case VKEY_TOGGLE_EPROM_WRITE: // Toggle write protect on eeprom
         if (eepromProtect == 0)
         {
             eepromProtect = 1;
-  //          Serial.print(F("                                      Eeprom R/O     "));
+            //          Serial.print(F("                                      Eeprom R/O     "));
         }
         else
         {
             eepromProtect = 0;
-  //          Serial.print(F("                                      Eeprom R/W     "));
-  //          delay(20);
+            //          Serial.print(F("                                      Eeprom R/W     "));
+            //          delay(20);
         }
         clearkey();
         break;
@@ -206,7 +210,7 @@ void setupUno()
     {
         threeHex[i][0] = threeHex[i][1] = 0;
     }
-//    Serial.println(F("KIM-UNO initialized."));
+    //    Serial.println(F("KIM-UNO initialized."));
 }
 
 uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
@@ -292,7 +296,6 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
     return c;
 }
 
-
 void scanKeys()
 {
     int led, row, col, noKeysScanned;
@@ -317,7 +320,7 @@ void scanKeys()
     // 2. perform scanning
     noKeysScanned = 0;
 
-// #define DEBUG_KEYBOARD
+    // #define DEBUG_KEYBOARD
 
     for (row = 0; row < 3; row++)
     {
@@ -356,7 +359,7 @@ void scanKeys()
                 else
                 { // if pressed for >1sec, it's a ModeShift key
                     if ((millis() - timeFirstPressed) > 1000)
-                    { // more than 1000 ms
+                    {                                // more than 1000 ms
                         if (keyCode == 9)            // it was RS button
                             curkey = '>';            // toggle eeprom write protect
                         timeFirstPressed = millis(); // because otherwise you toggle right back!
