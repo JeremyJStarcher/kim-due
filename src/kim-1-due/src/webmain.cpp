@@ -17,24 +17,14 @@ extern "C"
         init_display();
     }
 
+    void injectkey(uint8_t key) {
+        curkey = key;
+        interpretkeys();
+    }
+
     void webloop()
     {
-        puts("Webloop");
         exec6502(100); //do 100 6502 instructions
-
-#if 0
-    if (Serial.available())
-    {
-        curkey = Serial.read() & 0x7F;
-        interpretkeys();
-    }
-
-    scanKeys();
-    if (xkeyPressed() != 0)
-    {
-        interpretkeys();
-    }
-#endif
     }
 }
 

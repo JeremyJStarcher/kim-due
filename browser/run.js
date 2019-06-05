@@ -1,3 +1,5 @@
+"use strict";
+
 document.addEventListener('DOMContentLoaded', () => {
 	// In order to twiddle the SVG, it must be directly inlined.
 	// 
@@ -19,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 				_websetup();
 
+				wireupKeyboard();
 				runloop();
-
 			} catch (err) {
 				run();
 			}
@@ -46,4 +48,21 @@ function setLed(pos, data) {
 function runloop() {
 	_webloop();
 	setTimeout(runloop, 1);
+}
+
+function wireupKeyboard() {
+	const buttons = document.querySelectorAll("#button-box button");
+
+	Array.from(buttons).forEach((b) => {
+		b.addEventListener("click", (e) => {
+			e.preventDefault();
+
+			const ch = e.currentTarget.getAttribute("data-asc");
+			const v = ch.charCodeAt(0);
+
+			console.log("ch", ch, "value", v, typeof v);
+			_injectkey(+ch & 0x7F);
+
+		});
+	});
 }

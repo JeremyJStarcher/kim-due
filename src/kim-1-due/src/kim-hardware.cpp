@@ -178,9 +178,7 @@ void interpretkeys()
         clearkey();
         break;
     }
-
 }
-
 
 // =================================================================================================
 // KIM Uno Board functions are bolted on from here
