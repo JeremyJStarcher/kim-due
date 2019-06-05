@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	for (let i = 0; i < 6; i++) {
 		const c = document.querySelector("#seg7").cloneNode(true);
 		c.id = `display-${i}`;
-	const ledbar = document.querySelector(`#ledbar-${i}`);
+		const ledbar = document.querySelector(`#ledbar-${i}`);
 		ledbar.appendChild(c);
 	}
 
@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		setTimeout(() => {
 			try {
 				_websetup();
+
+				runloop();
+
 			} catch (err) {
 				run();
 			}
@@ -38,4 +41,9 @@ function setLed(pos, data) {
 		const seg = el.getElementById(a);
 		seg.style.fill = (data & 1 << i) ? "red" : "#5f0000";
 	});
+}
+
+function runloop() {
+	_webloop();
+	setTimeout(runloop, 1);
 }

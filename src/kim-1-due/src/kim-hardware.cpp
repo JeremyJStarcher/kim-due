@@ -1,4 +1,10 @@
+#ifdef TARGETWEB
+#include "fake-progmen.h"
+#else
 #include <Arduino.h>
+#endif
+
+
 #include <stdint.h>
 
 #include "builtin_display.h"
@@ -24,12 +30,12 @@ char threeHex[3][2]; // LED display
 
 void serout(uint8_t val)
 {
-    Serial.write(val);
+//    Serial.write(val);
 }
 
 void serouthex(uint8_t val)
 {
-    Serial.print(val, HEX);
+//    Serial.print(val, HEX);
 }
 
 uint8_t getAkey()
@@ -44,8 +50,8 @@ void clearkey()
 
 void printhex(uint16_t val)
 {
-    Serial.print(val, HEX);
-    Serial.println();
+//    Serial.print(val, HEX);
+//    Serial.println();
 }
 
 // getKIMkey() translates ASCII keypresses to codes the KIM ROM expects.
@@ -126,33 +132,33 @@ void interpretkeys()
     case VKEY_RS: // CtrlR = RS key = hardware reset (RST)
         reset6502();
         clearkey();
-        Serial.print("RSet\n");
+ //       Serial.print("RSet\n");
         break;
     case VKEY_ST: // CtrlT = ST key = throw an NMI to stop execution of user program
         nmi6502();
         clearkey();
-        Serial.print("STop\n");
+ //       Serial.print("STop\n");
         break;
     case VKEY_SST_OFF: // SST off
         SSTmode = 0;
         clearkey();
-        Serial.print(F("                                      SST OFF         "));
+ //       Serial.print(F("                                      SST OFF         "));
         break;
     case VKEY_SST_ON: // SST on
         SSTmode = 1;
         clearkey();
-        Serial.print(F("                                      SST ON          "));
+  //      Serial.print(F("                                      SST ON          "));
         break;
     case VKEY_TOGGLE_SERIAL_MODE: // TAB pressed, toggle between serial port and onboard keyboard/display
         if (useKeyboardLed == 0)
         {
             useKeyboardLed = 1;
-            Serial.print(F("                    Keyboard/Hex Digits Mode "));
+  //          Serial.print(F("                    Keyboard/Hex Digits Mode "));
         }
         else
         {
             useKeyboardLed = 0;
-            Serial.print(F("                        Serial Terminal Mode         "));
+  //          Serial.print(F("                        Serial Terminal Mode         "));
         }
         reset6502();
         clearkey();
@@ -161,13 +167,13 @@ void interpretkeys()
         if (eepromProtect == 0)
         {
             eepromProtect = 1;
-            Serial.print(F("                                      Eeprom R/O     "));
+  //          Serial.print(F("                                      Eeprom R/O     "));
         }
         else
         {
             eepromProtect = 0;
-            Serial.print(F("                                      Eeprom R/W     "));
-            delay(20);
+  //          Serial.print(F("                                      Eeprom R/W     "));
+  //          delay(20);
         }
         clearkey();
         break;
@@ -175,9 +181,11 @@ void interpretkeys()
 
 }
 
+
 // =================================================================================================
 // KIM Uno Board functions are bolted on from here
 // =================================================================================================
+#ifndef TARGETWEB
 
 void setupUno()
 {
@@ -200,7 +208,7 @@ void setupUno()
     {
         threeHex[i][0] = threeHex[i][1] = 0;
     }
-    Serial.println(F("KIM-UNO initialized."));
+//    Serial.println(F("KIM-UNO initialized."));
 }
 
 uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
@@ -286,6 +294,7 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
     return c;
 }
 
+
 void scanKeys()
 {
     int led, row, col, noKeysScanned;
@@ -365,3 +374,4 @@ void scanKeys()
     if (noKeysScanned == 24) // no keys detected in any row, 3 rows * 8 columns = 24. used to be 28.
         prevKey = 0;         // allows you to enter same key twice
 } // end of function
+#endif

@@ -5,18 +5,22 @@
 #include "kim-hardware.h"
 #include <emscripten/emscripten.h>
 
-void EMSCRIPTEN_KEEPALIVE websetup2()
+#include <stdio.h>
+extern "C"
 {
-    reset6502();
-    initKIM(); // Enters 1c00 in KIM vectors 17FA and 17FE. Might consider doing 17FC as well????????
-    loadTestProgram();
+    void EMSCRIPTEN_KEEPALIVE websetup()
+    {
+        reset6502();
+        initKIM(); // Enters 1c00 in KIM vectors 17FA and 17FE. Might consider doing 17FC as well????????
+        loadTestProgram();
 
-    init_display();
-}
+        init_display();
+    }
 
-void webloop()
-{
-    exec6502(100); //do 100 6502 instructions
+    void webloop()
+    {
+        puts("Webloop");
+        exec6502(100); //do 100 6502 instructions
 
 #if 0
     if (Serial.available())
@@ -31,13 +35,6 @@ void webloop()
         interpretkeys();
     }
 #endif
-}
-
-extern "C"
-{
-    void EMSCRIPTEN_KEEPALIVE websetup()
-    {
-        websetup2();
     }
 }
 
