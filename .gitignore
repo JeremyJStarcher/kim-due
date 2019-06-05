@@ -10,4 +10,4 @@ KIM-1/fltpt65_uno/*.hex
 KIM-1/fltpt65_uno/*.log
 KIM-1/fltpt65_uno/*.lst
 KIM-1/fltpt65_uno/*.xrf
-browser/csrc/
+browser/dist
