@@ -6,11 +6,13 @@
    Tidied up by Mark VandeWettering to make it compile with platformio.
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 #ifdef TARGETWEB
 #include "fake-progmen.h"
+#include <emscripten/emscripten.h>
 #else
 #include <avr/pgmspace.h>
 #endif
@@ -683,11 +685,22 @@ uint8_t read6502(uint16_t address)
         return (pgm_read_byte_near(disasm + address - 0x2000));
     }
 
-    if ((address >= 0x5000) && (address <= 0x6FE3))
+    if (address == 0x6666)
+    {
+        uint16_t p1 = 0x5000;
+        uint16_t p2 = (sizeof calcRom / sizeof calcRom[0]) + p1;
+
+        uint16_t offset = *calcRom + address - 0x5000;
+
+        printf("%04x %04x %04x %04x\n", offset, address, p1, p2);
+    }
+
+    if ((address >= 0x5000) && (address <= (sizeof calcRom / sizeof calcRom[0]) + 0x5000))
     {
         // 0x6FDF, plus 4 bytes for JSR manually added -
         // Read to floating point library between $5000 and $6157
-        return (pgm_read_byte_near(calcRom + address - 0xD000)); // mchess ROM
+
+        return (pgm_read_byte_near(calcRom + address - 0x5000));
     }
 
     if (address >= 0xC000 && address <= 0xC571)
