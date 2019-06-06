@@ -1,6 +1,13 @@
-PROGRAM = asteroid
+romdest=../../../../src/kim-1-due/src/roms
 
-all: $(PROGRAM).ptp
+PROGRAM=asteroid
+
+#all: $(PROGRAM).ptp
+all: $(PROGRAM).c
+
+${PROGRAM}.c: ${PROGRAM}.bin Makefile
+	ls -alh ${romdest}
+	../../../tools/rom2c ${PROGRAM}.bin ${romdest}/astroid.h astroid
 
 $(PROGRAM).ptp: $(PROGRAM).bin Makefile
 	srec_cat $(PROGRAM).bin -binary -offset 0x0200 -o $(PROGRAM).ptp -MOS_Technologies
