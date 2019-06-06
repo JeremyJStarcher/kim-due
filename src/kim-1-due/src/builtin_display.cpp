@@ -93,7 +93,7 @@ void driveLEDs()
             ledNo = byt * 2 + i;
             char bcd = threeHex[byt][i];
             out = dig[(int)bcd];
-            display.sendRawByte(0, t_8_6[ledNo], out);
+            display.sendRawByte(t_8_6[ledNo], out);
         }
     }
 }
