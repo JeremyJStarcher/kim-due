@@ -8,7 +8,7 @@ mkdir -p ${DIST}
 CSRC="${DIST}csrc"
 cp ../src/kim-1-due/src ${CSRC} -Rv
 
-SOURCE="dice-roll.c"
+SOURCE="src/c/main.c"
 SOURCE="${SOURCE} ${CSRC}/webmain.cpp"
 SOURCE="${SOURCE} ${CSRC}/cpu.cpp"
 SOURCE="${SOURCE} ${CSRC}/builtin_display.cpp"

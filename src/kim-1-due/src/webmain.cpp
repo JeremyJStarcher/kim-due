@@ -16,7 +16,8 @@ extern "C"
         init_display();
     }
 
-    void injectkey(uint8_t key) {
+    void injectkey(uint8_t key)
+    {
         curkey = key;
         interpretkeys();
     }
