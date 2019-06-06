@@ -45,78 +45,7 @@ uint8_t dig[19] = {
 };
 
 #ifdef TARGETWEB
-void init_display()
-{
-    convert_led_pattern();
-
-    uint8_t logo[]{
-        0b01110111, // A
-        0b00000101, // r
-        0b00111101, // d
-        0b00011100, // u
-        0b00010000, // i
-        0b00010101, // n
-        0b00011101, // o
-        0b00000000  // <blank>
-    };
-
-    for (int i = 0; i < sizeof(logo) / sizeof(logo[0]); i++)
-    {
-        // var k = [i, logo[i]].join(", ");
-        EM_ASM({
-            setLed($0, $1);
-        },
-               i, logo[i]);
-    }
-
-    //  clear_display();
-}
-
-void driveLED(uint8_t led, uint8_t n)
-{
-    // Cheap anti-flicker
-    if (n == 0)
-    {
-        return;
-    }
-
-    // Pick off just the bits we need
-    led &= 0b00000111;
-
-    if (led > 5)
-    {
-        return;
-    }
-
-    uint8_t p2 = xlate_led_pattern[n];
-
-    EM_ASM({
-        setLed($0, $1);
-    },
-           led, p2);
-}
-
-void driveLEDs()
-{
-    int ledNo;
-    int byt, i;
-    int out;
-
-    for (byt = 0; byt < 3; byt++)
-    {
-        for (i = 0; i < 2; i++)
-        {
-            ledNo = byt * 2 + i;
-            char bcd = threeHex[byt][i];
-            out = dig[(int)bcd];
-            EM_ASM({
-                setLed($0, $1);
-            },
-                   ledNo, out);
-        }
-    }
-}
-
+#include "../../../browser/src/c/builtin_display.cpp"
 #endif
 
 #if BOARD_LED_MAX7219
@@ -277,3 +206,4 @@ void convert_led_pattern(void)
         xlate_led_pattern[i] = result;
     }
 }
+

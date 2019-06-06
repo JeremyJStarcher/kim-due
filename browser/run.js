@@ -16,11 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 }, false);
 
-function setLed(pos, data) {
+const ledTimer = [];
+
+function setLed(pos, data, force) {
+
 	const el = document.querySelector(`#display-${pos}`);
 
 	if (!el) {
 		return;
+	}
+
+	if (force) {
+		ledTimer[pos] = null;
+	} else {
+		if (data === 0) {
+			ledTimer[pos] = cpuInstructionCount;
+			return;
+		} else {
+			ledTimer[pos] = null;
+		}
 	}
 
 	const s = "gfedcba".split("").map((a, i) => {
@@ -29,8 +43,24 @@ function setLed(pos, data) {
 	});
 }
 
+let cpuInstructionCount = 0;
 function runloop() {
-	_webloop();
+	const ANTIFLICKER_DELAY = 2000;
+
+	const NUMBER_OF_INSTRUCTIONS = 1000;
+	_webloop(NUMBER_OF_INSTRUCTIONS);
+	cpuInstructionCount += NUMBER_OF_INSTRUCTIONS;
+
+	for (let i = 0; i < ledTimer.length; i++) {
+		let oldCount = ledTimer[i];
+		if (oldCount !== null) {
+			const instrunctionsSince = cpuInstructionCount - oldCount;
+			if (instrunctionsSince > ANTIFLICKER_DELAY) {
+				setLed(i, 0, true);
+			}
+		}
+	}
+
 	setTimeout(runloop, 1);
 }
 

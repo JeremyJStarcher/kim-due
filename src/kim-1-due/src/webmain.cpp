@@ -22,9 +22,9 @@ extern "C"
         interpretkeys();
     }
 
-    void webloop()
+    void webloop(uint16_t num_instructions)
     {
-        exec6502(100); //do 100 6502 instructions
+        exec6502(num_instructions);
     }
 }
 
