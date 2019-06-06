@@ -14,21 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const ledbar = document.querySelector(`#ledbar-${i}`);
 		ledbar.appendChild(c);
 	}
-
-	const run = () => {
-		setTimeout(() => {
-			try {
-				_websetup();
-
-				wireupKeyboard();
-				runloop();
-			} catch (err) {
-				run();
-			}
-		}, 250)
-	};
-	run();
-
 }, false);
 
 function setLed(pos, data) {
@@ -61,4 +46,12 @@ function wireupKeyboard() {
 			_injectkey(ch);
 		});
 	});
+}
+
+Module['onRuntimeInitialized'] = onRuntimeInitialized;
+
+function onRuntimeInitialized() {
+	_websetup();
+	wireupKeyboard();
+	runloop();
 }
