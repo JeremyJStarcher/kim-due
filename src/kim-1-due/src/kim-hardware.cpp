@@ -37,12 +37,6 @@ void clearkey()
     curkey = 0;
 }
 
-void printhex(uint16_t val)
-{
-    //    Serial.print(val, HEX);
-    //    Serial.println();
-}
-
 // getKIMkey() translates ASCII keypresses to codes the KIM ROM expects.
 // note that, inefficiently, the KIM Uno board's key codes are first translated to ASCII, then routed through
 // here just like key presses from the ASCII serial port are. That's inefficient but left like this
