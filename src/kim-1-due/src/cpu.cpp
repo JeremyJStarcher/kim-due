@@ -730,6 +730,7 @@ uint8_t read6502(uint16_t address)
             serout((blitzMode == 1) ? 'B' : 'N');
             serout('<');
         }
+        clear_display();
         return (tempval);
     }
     if (address == 0xCFF3)
