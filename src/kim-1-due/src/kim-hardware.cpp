@@ -127,25 +127,21 @@ void interpretkeys()
     case VKEY_SST_OFF: // SST off
         SSTmode = 0;
         clearkey();
-        //       Serial.print(F("                                      SST OFF         "));
         break;
 
     case VKEY_SST_ON: // SST on
         SSTmode = 1;
         clearkey();
-        //      Serial.print(F("                                      SST ON          "));
         break;
 
     case VKEY_TOGGLE_SERIAL_MODE: // TAB pressed, toggle between serial port and onboard keyboard/display
         if (useKeyboardLed == 0)
         {
             useKeyboardLed = 1;
-            //          Serial.print(F("                    Keyboard/Hex Digits Mode "));
         }
         else
         {
             useKeyboardLed = 0;
-            //          Serial.print(F("                        Serial Terminal Mode         "));
         }
         reset6502();
         clearkey();
@@ -277,6 +273,7 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
         c = (SSTmode == 0 ? VKEY_SST_ON : VKEY_SST_OFF);
         break; // 	SST toggle
     }
+
     return c;
 }
 
