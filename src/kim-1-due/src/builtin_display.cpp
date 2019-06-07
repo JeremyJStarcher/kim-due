@@ -60,7 +60,7 @@ void init_display()
 
     convert_led_pattern();
 
-    uint8_t logo[]{
+    uint8_t logo[8]{
         0b01110111, // A
         0b00000101, // r
         0b00111101, // d
