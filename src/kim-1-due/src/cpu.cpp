@@ -587,21 +587,21 @@ uint8_t read6502(uint16_t address)
             return (0xEA); // and return from subroutine with a fake NOP instruction
         }
 
-#ifdef EMULATE_KEYBOARD
         if (address == 0x1E65)
         {                  //intercept GETCH (get char from serial). used to be 0x1E5A, but intercept *within* routine just before get1 test
             a = getAkey(); // get A from main loop's curkey
+
             if (a == 0)
             {
                 pc = 0x1E60; // cycle through GET1 loop for character start, let the 6502 runs through this loop in a fake way
                 return (0xEA);
             }
+
             clearkey();
             x = RAM[0x00FD]; // x is saved in TMPX by getch routine, we need to get it back in x;
             pc = 0x1E87;     // skip subroutine
             return (0xEA);   // and return from subroutine with a fake NOP instruction
         }
-#endif
 
         if (address == 0x1C2A)
         {                                // intercept DETCPS
