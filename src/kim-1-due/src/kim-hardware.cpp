@@ -292,6 +292,7 @@ void scanKeys()
         digitalWrite(ledSelect[led], HIGH); // Use builtin pullup resistors
     }
 
+
     // 1. initialise: set columns to input with pullups
     for (col = 0; col < 8; col++)
     {

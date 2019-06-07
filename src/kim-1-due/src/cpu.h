@@ -17,7 +17,6 @@ void nmi6502();
 void initKIM(void);
 void loadTestProgram(void);
 extern void driveLEDs();
-void scanKeys();
 void nmi6502(void);
 
 extern uint8_t RAM[ONBOARD_RAM]; // main 1KB RAM		 0x000-0x3FF
