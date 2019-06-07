@@ -23,6 +23,7 @@
 #include "cpu.h"
 #include "boardhardware.h"
 #include "builtin_display.h"
+#include "serial_display.h"
 
 // Option 1:
 //   Emulate all of the keyboard handling by hijacking the keyboard ROM
@@ -89,8 +90,6 @@ extern void eepromwrite(uint16_t eepromaddress, uint8_t bytevalue);
 extern char threeHex[3][2]; // buffer for 3 hex digits
 extern int blitzMode;       // status variable only for microchess
 
-extern void serout(uint8_t value);
-extern void serouthex(uint8_t val);
 extern uint8_t getAkey(void); // for serial port get normal ASCII keys
 extern uint8_t getKIMkey();   // for emulation of KIM keypad
 extern void clearkey(void);
@@ -629,20 +628,8 @@ uint8_t read6502(uint16_t address)
                 threeHex[1][1] = RAM[0x00FA] & 0xF;
                 threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
                 threeHex[2][1] = RAM[0x00F9] & 0xF;
-
-                serout(13);
-                serout('>');
-                for (iii = 0; iii < 3; iii++)
-                {
-                    serouthex(threeHex[iii][0]);
-                    serouthex(threeHex[iii][1]);
-                    if (iii != 2)
-                        serout(' ');
-                }
-                serout('<');
-                serout(13);
             }
-
+            serial_scands();
             // driveLEDs();
 
             //pc = 0x1F45;   // skip subroutine part that deals with LEDs

@@ -27,16 +27,6 @@ char threeHex[3][2]; // LED display
 
 // ---------- called from cpu.c ----------------------
 
-void serout(uint8_t val)
-{
-    //    Serial.write(val);
-}
-
-void serouthex(uint8_t val)
-{
-    //    Serial.print(val, HEX);
-}
-
 uint8_t getAkey()
 {
     return (curkey);

@@ -1,8 +1,9 @@
 #include <Arduino.h>
 
 #include "cpu.h"
-#include "builtin_display.h"
 #include "kim-hardware.h"
+#include "builtin_display.h"
+#include "serial_display.h"
 
 void setup()
 {
@@ -23,7 +24,15 @@ void setup()
 
 void loop()
 {
-    exec6502(100); //do 100 6502 instructions
+    const uint16_t redraw_delay = 250;
+    static uint32_t end_time = millis() + redraw_delay;
+    exec6502(100);
+
+    if (millis() > end_time)
+    {
+        serial_statusline();
+        end_time = millis() + redraw_delay;
+    }
 
     if (Serial.available())
     {
