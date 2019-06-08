@@ -73,3 +73,6 @@ void driveLEDs()
         }
     }
 }
+
+void clear_display() {
+}

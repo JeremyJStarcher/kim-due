@@ -20,6 +20,7 @@
 #include "roms/cassette.h"
 #include "roms/monitor.h"
 #include "roms/calcrom.h"
+#include "roms/astroid.h"
 #include "cpu.h"
 #include "boardhardware.h"
 #include "builtin_display.h"
@@ -916,14 +917,14 @@ void initKIM()
 
     for (i = 0; i < 64; i++)
     { //64 of 102 program bytes
-        RAM003[i] = pgm_read_byte_near(movit + i);
+     //NOCOPY   RAM003[i] = pgm_read_byte_near(movit + i);
     }
 
     // movit spans into the second 64 byte memory segment...
 
     for (i = 0; i < (95 - 64); i++)
     {
-        RAM002[i] = pgm_read_byte_near(movit + i + 64);
+      //NOCOPY  RAM002[i] = pgm_read_byte_near(movit + i + 64);
     }
 
     // the code below copies relocate to 0x0110 in RAM. It can be overwritten
@@ -931,7 +932,7 @@ void initKIM()
 
     for (i = 0; i < 149; i++)
     {
-        RAM[i + 0x0110] = pgm_read_byte_near(relocate + i);
+      //NOCOPY  RAM[i + 0x0110] = pgm_read_byte_near(relocate + i);
     }
 
     // the code below copies branch to 0x01A5 (not 0x17C0 anymore) in RAM. It
@@ -942,28 +943,31 @@ void initKIM()
     for (i = 0; i < 42; i++)
     {
         //RAM002[i] = pgm_read_byte_near(branch + i);
-        RAM[i + 0x01A5] = pgm_read_byte_near(branch + i);
+      //NOCOPY  RAM[i + 0x01A5] = pgm_read_byte_near(branch + i);
     }
 }
 
 void loadTestProgram() // Call this from main() if you want a program preloaded. It's the first program from First Book of KIM...
 {
-    uint8_t i;
+    uint16_t i;
 
     // the first program from First Book of KIM...
 
-    uint8_t fbkDemo[9] = {
-        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
+    //uint8_t fbkDemo[9] = {
+    //    0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
 
     // uint8_t fbkDemo[13] = {
     //    0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
+    // RAM[0x0010] = 0x10;
+    // RAM[0x0011] = 0x11;
+
+    #define fbkDemo astroid
 
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
-    for (i = 0; i < l; i++)
+    for (i = 0; i < l; i++) {
         RAM[i + 0x0200] = fbkDemo[i];
-    RAM[0x0010] = 0x10;
-    RAM[0x0011] = 0x11;
+    }
 
     // load fltpt65 demo program
     uint8_t fltptDemo[31] = {
@@ -971,8 +975,9 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
         0x20, 0xAA, 0x70,
         0xF0, 0x08,
         0x20, 0x31, 0x70, 0xA9, 0x04, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70, 0x00};
-    for (i = 0x0; i < 31; i++)
-        RAM[i + 0x0210] = fltptDemo[i];
+    for (i = 0x0; i < 31; i++) {
+        // NOCOPY RAM[i + 0x0210] = fltptDemo[i];
+    }
 
     /* org=$0210
     JSR $6FF1
