@@ -17,6 +17,7 @@
 #include <avr/pgmspace.h>
 #endif
 
+#include "MemIo/MemIo.h"
 #include "roms/cassette.h"
 #include "roms/monitor.h"
 #include "roms/calcrom.h"
@@ -46,6 +47,8 @@ static uint8_t ioPAD = 0;     // Port A data register
 static uint8_t ioPADD = 0xFF; // Port A data direction register
 static uint8_t ioPBD = 0;     // port B data register
 static uint8_t ioPBDD = 0;    // Port B data direction register
+
+MemIo *memio = new MemIo();
 
 void handle()
 {

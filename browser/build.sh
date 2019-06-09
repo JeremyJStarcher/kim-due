@@ -14,6 +14,8 @@ SOURCE="${SOURCE} ${CSRC}/webmain.cpp"
 SOURCE="${SOURCE} ${CSRC}/cpu.cpp"
 SOURCE="${SOURCE} ${CSRC}/builtin_display.cpp"
 SOURCE="${SOURCE} ${CSRC}/kim-hardware.cpp"
+SOURCE="${SOURCE} ${CSRC}/MemIo/MemIoBase.cpp"
+SOURCE="${SOURCE} ${CSRC}/MemIo/MemIo.cpp"
 
 echo "SOURCE: ${SOURCE}"
 echo "CSRC: ${CSRC}"
