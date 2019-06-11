@@ -18,6 +18,7 @@
 #endif
 
 #include "MemIo/MemIo.h"
+#include "MemIo/MemIoRom.h"
 #include "roms/cassette.h"
 #include "roms/monitor.h"
 #include "roms/calcrom.h"
@@ -907,6 +908,9 @@ void reset6502()
 // this is what user has to enter manually when powering KIM on. Why not do it here.
 void initKIM()
 {
+    MemIoRom *rom1 = new MemIoRom();
+    rom1->install(0x1800, 0x1C00-1, cassette);
+
     uint16_t i;
 
     RAM002[(0x17FA) - (0x17C0)] = 0x00;
@@ -919,15 +923,15 @@ void initKIM()
     // book contains OR scan codes, so don't take the bytes from there!
 
     for (i = 0; i < 64; i++)
-    { //64 of 102 program bytes
-     //NOCOPY   RAM003[i] = pgm_read_byte_near(movit + i);
+    {   //64 of 102 program bytes
+        //NOCOPY   RAM003[i] = pgm_read_byte_near(movit + i);
     }
 
     // movit spans into the second 64 byte memory segment...
 
     for (i = 0; i < (95 - 64); i++)
     {
-      //NOCOPY  RAM002[i] = pgm_read_byte_near(movit + i + 64);
+        //NOCOPY  RAM002[i] = pgm_read_byte_near(movit + i + 64);
     }
 
     // the code below copies relocate to 0x0110 in RAM. It can be overwritten
@@ -935,7 +939,7 @@ void initKIM()
 
     for (i = 0; i < 149; i++)
     {
-      //NOCOPY  RAM[i + 0x0110] = pgm_read_byte_near(relocate + i);
+        //NOCOPY  RAM[i + 0x0110] = pgm_read_byte_near(relocate + i);
     }
 
     // the code below copies branch to 0x01A5 (not 0x17C0 anymore) in RAM. It
@@ -946,7 +950,7 @@ void initKIM()
     for (i = 0; i < 42; i++)
     {
         //RAM002[i] = pgm_read_byte_near(branch + i);
-      //NOCOPY  RAM[i + 0x01A5] = pgm_read_byte_near(branch + i);
+        //NOCOPY  RAM[i + 0x01A5] = pgm_read_byte_near(branch + i);
     }
 }
 
@@ -964,11 +968,12 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
     // RAM[0x0010] = 0x10;
     // RAM[0x0011] = 0x11;
 
-    #define fbkDemo astroid
+#define fbkDemo astroid
 
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
-    for (i = 0; i < l; i++) {
+    for (i = 0; i < l; i++)
+    {
         RAM[i + 0x0200] = fbkDemo[i];
     }
 
@@ -978,7 +983,8 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
         0x20, 0xAA, 0x70,
         0xF0, 0x08,
         0x20, 0x31, 0x70, 0xA9, 0x04, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70, 0x00};
-    for (i = 0x0; i < 31; i++) {
+    for (i = 0x0; i < 31; i++)
+    {
         // NOCOPY RAM[i + 0x0210] = fltptDemo[i];
     }
 
