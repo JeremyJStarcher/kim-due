@@ -909,7 +909,7 @@ void reset6502()
 void initKIM()
 {
     MemIoRom *rom1 = new MemIoRom();
-    rom1->install(0x1800, 0x1C00-1, cassette);
+    rom1->install(0x1800, 0x1C00 - 1, cassette);
 
     uint16_t i;
 
@@ -923,7 +923,7 @@ void initKIM()
     // book contains OR scan codes, so don't take the bytes from there!
 
     for (i = 0; i < 64; i++)
-    {   //64 of 102 program bytes
+    { //64 of 102 program bytes
         //NOCOPY   RAM003[i] = pgm_read_byte_near(movit + i);
     }
 
@@ -960,16 +960,15 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
 
     // the first program from First Book of KIM...
 
-    //uint8_t fbkDemo[9] = {
-    //    0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
+    uint8_t fbkDemo[9] = {
+        0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
 
-    // uint8_t fbkDemo[13] = {
+    //uint8_t fbkDemo[13] = {
     //    0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
-    // RAM[0x0010] = 0x10;
-    // RAM[0x0011] = 0x11;
+    RAM[0x0010] = 0x10;
+    RAM[0x0011] = 0x11;
 
-#define fbkDemo astroid
-
+    // #define fbkDemo astroid
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
     for (i = 0; i < l; i++)
