@@ -50,6 +50,8 @@ static uint8_t ioPBD = 0;     // port B data register
 static uint8_t ioPBDD = 0;    // Port B data direction register
 
 MemIo *memio = new MemIo();
+MemIoRom *rom1 = new MemIoRom();
+MemIoRom *rom2 = new MemIoRom();
 
 void handle()
 {
@@ -579,10 +581,6 @@ uint8_t read6502(uint16_t address)
         return (RAM002[address - 0x17C0]);
     }
 
-    if (address < 0x1C00)
-    { // 0x1800-0x1C00 is ROM 003
-        return (pgm_read_byte_near(cassette + address - 0x1800));
-    }
     if (address < 0x2000)
     { // 0x1C00-0x2000 is ROM 002. It needs some intercepting from emulator...
         if (address == 0x1EA0)
@@ -667,9 +665,16 @@ uint8_t read6502(uint16_t address)
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
 #endif
+    }
 
-        // if we're still here, it's normal reading from the highest ROM 002.
-        return (pgm_read_byte_near(monitor + address - 0x1C00)); // ROM 002
+    if (rom1->inRange(address))
+    {
+        return rom1->read(address);
+    }
+
+    if (rom2->inRange(address))
+    {
+        return rom2->read(address);
     }
 
     if (address < 0x21F9)
@@ -908,8 +913,11 @@ void reset6502()
 // this is what user has to enter manually when powering KIM on. Why not do it here.
 void initKIM()
 {
-    MemIoRom *rom1 = new MemIoRom();
-    rom1->install(0x1800, 0x1C00 - 1, cassette);
+    rom1->install(0x1800, 0x1BFF, cassette);
+    rom2->install(0x1C00, 0x1FFF, monitor);
+
+    uint8_t vect_lo = rom2->read(0x1C00);
+    uint8_t vect_high = rom2->read(0x1FFF);
 
     uint16_t i;
 

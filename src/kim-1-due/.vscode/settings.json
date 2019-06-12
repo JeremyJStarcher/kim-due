@@ -1,6 +1,6 @@
 {
     "terminal.integrated.env.linux": {
-        "PATH": "/home/jjs/.platformio/penv/bin:/home/jjs/.platformio/penv:/home/jjs/bin/emsdk:/home/jjs/bin/emsdk/fastcomp/emscripten:/home/jjs/bin/emsdk/node/8.9.1_64bit/bin:/home/jjs/.cargo/bin:/usr/local/bin:/home/jjs/.nvm/versions/node/v10.14.2/bin:/home/jjs/.npm-packages/bin:/home/jjs/.local/bin:/home/jjs/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/opt/local/bin:/home/jjs/bin-shared/Linux",
+        "PATH": "/home/jjs/.platformio/penv/bin:/home/jjs/.platformio/penv:/home/jjs/.cargo/bin:/usr/local/bin:/home/jjs/.cargo/bin:/home/jjs/.nvm/versions/node/v10.14.2/bin:/home/jjs/.npm-packages/bin:/home/jjs/.local/bin:/home/jjs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/opt/local/bin:/home/jjs/bin-shared/Linux",
         "PLATFORMIO_CALLER": "vscode"
     }
 }
