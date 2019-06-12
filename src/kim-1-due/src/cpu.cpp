@@ -479,18 +479,6 @@ uint8_t read6502(uint16_t address)
         uint8_t key_value;
         uint8_t ret = 0;
 
-#if 0
-        Serial.println("");
-        Serial.print("holding_key_down ");
-        Serial.print(holding_key_down);
-
-        Serial.print(" ctr ");
-        Serial.print(ctr);
-
-        Serial.print(" last_key_value ");
-        Serial.print(last_key_value);
-#endif
-
         if (holding_key_down)
         {
             key_value = last_key_value;
@@ -513,10 +501,6 @@ uint8_t read6502(uint16_t address)
             }
         }
 
-#if 0
-        Serial.print(" keyValue ");
-        Serial.print(keyValue);
-#endif
 
         switch (address)
         {
