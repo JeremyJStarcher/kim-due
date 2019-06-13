@@ -14,12 +14,40 @@
 
 // #define EMULATE_KEYBOARD
 
+//assumes little endian
+#define printBits(v) printBits2(sizeof(v), (&v))
+
+void printBits2(size_t const size, void const *const ptr)
+{
+    unsigned char *b = (unsigned char *)ptr;
+    unsigned char byte;
+    int i, j;
+
+    for (i = size - 1; i >= 0; i--)
+    {
+        for (j = 7; j >= 0; j--)
+        {
+            byte = (b[i] >> j) & 1;
+            printf("%u", byte);
+        }
+    }
+}
+
 void MemIoRiot002::processIoChange()
 {
     uint8_t led;
     uint8_t code;
 
     led = (ioPBD - 9) >> 1;
+
+    if (ioPADD == 0x7F && false)
+    {
+        printf("ioPBD: ");
+        printBits(ioPBD);
+        printf(" led: ");
+        printBits(led);
+        puts("");
+    }
 
     // There is a software demo that fails if we include
     // the ioPADD.
