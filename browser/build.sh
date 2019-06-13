@@ -25,7 +25,7 @@ echo "CSRC: ${CSRC}"
 LEVEL="-O0 -g4"
 #LEVEL="-O3"
 
-emcc ${SOURCE} -s EXPORTED_FUNCTIONS='["_websetup", "_webloop", "_injectkey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 ${LEVEL} -D TARGETWEB -o ${DIST}/index.js
+emcc ${SOURCE} --emrun -s EXPORTED_FUNCTIONS='["_websetup", "_webloop", "_injectkey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 ${LEVEL} -D TARGETWEB -o ${DIST}/index.js
 
 cp index.html ${DIST}
 cp *.css ${DIST}
