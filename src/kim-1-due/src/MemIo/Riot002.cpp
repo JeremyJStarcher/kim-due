@@ -37,6 +37,17 @@ void MemIoRiot002::processIoChange()
 {
     uint8_t led;
     uint8_t code;
+   /* The LED port values start at 9 and work up
+    * by increments of two:
+    *  Port B Data Register       LED #
+    * ---------------------       -----
+    *  09                           1
+    *  0b                           2
+    *  0d                           3
+    *  0f                           4
+    *  11                           5
+    *  13                           6
+    */
 
     led = (ioPBD - 9) >> 1;
 
