@@ -523,7 +523,7 @@ uint8_t read6502(uint16_t address)
 
         uint16_t offset = *calcRom + address - 0x5000;
 
-        printf("%04x %04x %04x %04x\n", offset, address, p1, p2);
+        // printf("%04x %04x %04x %04x\n", offset, address, p1, p2);
     }
 
     if ((address >= 0x5000) && (address <= (sizeof calcRom / sizeof calcRom[0]) + 0x5000))
