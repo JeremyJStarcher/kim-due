@@ -19,6 +19,8 @@
 
 #include "MemIo/MemIo.h"
 #include "MemIo/MemIoRom.h"
+#include "MemIo/Riot002.h"
+
 #include "roms/cassette.h"
 #include "roms/monitor.h"
 #include "roms/calcrom.h"
@@ -27,6 +29,7 @@
 #include "boardhardware.h"
 #include "builtin_display.h"
 #include "serial_display.h"
+#include "kim-hardware.h"
 
 // Option 1:
 //   Emulate all of the keyboard handling by hijacking the keyboard ROM
@@ -37,47 +40,10 @@
 //   like real hardware.
 //   MUCH slower but slightly more compatible.
 
-// #define EMULATE_KEYBOARD
-
-#define aIoPAD 0x1740
-#define aIoPADD 0x1741
-#define aIoPBD 0x1742
-#define aIoPBDD 0x1743
-
-static uint8_t ioPAD = 0;     // Port A data register
-static uint8_t ioPADD = 0xFF; // Port A data direction register
-static uint8_t ioPBD = 0;     // port B data register
-static uint8_t ioPBDD = 0;    // Port B data direction register
-
 MemIo *memio = new MemIo();
 MemIoRom *rom1 = new MemIoRom();
 MemIoRom *rom2 = new MemIoRom();
-
-void handle()
-{
-    uint8_t led;
-    uint8_t code;
-
-    led = (ioPBD - 9) >> 1;
-
-    // There is a software demo that fails if we include
-    // the ioPADD.
-    // trouble is, I'm not sure if the demo is actually working
-    // or not, since it was written for a KIM replica, and not a
-    // real KIM.
-    // However, leaving it out doesn't seem to cause any harm.
-
-    //                 * = 0200
-    // 0200   A9 FF      LDA #$FF
-    // 0202   8D 40 17   STA $1740
-    // 0205   A9 09      LDA #$09
-    // 0207   8D 42 17   STA $1742
-    // 020A   4C 0A 02   JMP $020A
-    // 020D              .END
-
-    code = ioPAD & ioPADD;
-    driveLED(led, code);
-}
+MemIoRiot002 *riotIo002 = new MemIoRiot002();
 
 void getBin(int num, char *str)
 {
@@ -98,13 +64,10 @@ extern char threeHex[3][2]; // buffer for 3 hex digits
 extern int blitzMode;       // status variable only for microchess
 
 extern uint8_t getAkey(void); // for serial port get normal ASCII keys
-extern uint8_t getKIMkey();   // for emulation of KIM keypad
-extern void clearkey(void);
 
-uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
-uint8_t iii;                   // counter for various purposes, declared here to avoid in-function delay in 6502 functions.
-uint8_t nmiFlag = 0;           // added by OV to aid single-stepping SST mode on KIM-I
-uint8_t SSTmode = 0;           // SST switch in KIM-I: 1 = on.
+uint8_t iii;         // counter for various purposes, declared here to avoid in-function delay in 6502 functions.
+uint8_t nmiFlag = 0; // added by OV to aid single-stepping SST mode on KIM-I
+uint8_t SSTmode = 0; // SST switch in KIM-I: 1 = on.
 
 #define FLAG_CARRY 0x01
 #define FLAG_ZERO 0x02
@@ -448,112 +411,11 @@ uint8_t read6502(uint16_t address)
         serout('7'); // trap code 7 - read in I/O 003
         return (0);
     }
-    if (address < 0x1780)
+
+    if (riotIo002->inRange(address))
     {
-        // 0x1740-0x1780 is IO space of RIOT 002
-        if (address == 0x1747)
-        {
-            // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
-            return (0xFF);
-        }
-
-#ifdef EMULATE_KEYBOARD
-        if (address == 0x1740)
-        {
-            // returns 1 for Keyboard/LED or 0 for Serial terminal
-            return (useKeyboardLed);
-        }
-
-        serout('%');
-        serout('6'); // trap code 6 - read in I/O 002
-        return (0);
+        return riotIo002->read(address);
     }
-#else
-        // The ROM needs the button held down for a certain length of
-        // time as debounce technique.  Fake holding the button down.
-        const uint8_t HOLDBUTTON_DELAY = 0x08; // Found by trial and error
-        static uint8_t ctr = 0;
-        static bool holding_key_down = false;
-        static uint8_t last_key_value;
-
-        uint8_t key_value;
-        uint8_t ret = 0;
-
-        if (holding_key_down)
-        {
-            key_value = last_key_value;
-
-            ctr--;
-            if (ctr == 0)
-            {
-                holding_key_down = false;
-                clearkey();
-            }
-        }
-        else
-        {
-            key_value = getKIMkey();
-            last_key_value = key_value;
-            if (key_value != 255)
-            {
-                holding_key_down = true;
-                ctr = HOLDBUTTON_DELAY;
-            }
-        }
-
-
-        switch (address)
-        {
-        case aIoPAD:
-            switch (ioPBD & 0x07)
-            {
-                /* See the keyboard.cpp for details */
-            case 1:
-                ret = ~(0x40 >> key_value);
-                break;
-            case 3:
-                ret = ~(0x40 >> (key_value - 7));
-                break;
-            case 5:
-                ret = ~(0x40 >> (key_value - 14));
-                break;
-            case 7:
-                ret = useKeyboardLed ? 0xFF : 0xFE;
-                break;
-            default:
-                ret = 0xFF;
-                break;
-            }
-
-            ret &= ~ioPADD;
-            break;
-
-        case aIoPADD:
-            ret = ioPADD;
-            break;
-
-        case aIoPBD:
-            ret = ioPBD;
-            ret &= ~ioPBDD;
-            break;
-
-        case aIoPBDD:
-            ret = ioPBDD;
-            break;
-
-        case 0x1706:
-            //  ret = ~((UInt8)hwCycles);
-            break;
-
-        default:
-            ret = 0xff;
-            break;
-        }
-
-        return ret;
-    }
-
-#endif
 
     if (address < 0x17C0)
     { // 0x1780-0x17C0 is RAM from RIOT 003
@@ -784,45 +646,9 @@ void write6502(uint16_t address, uint8_t value)
         return;
     }
 
-    if (address < 0x1780)
+    if (riotIo002->inRange(address))
     {
-        switch (address)
-        {
-        case aIoPAD:
-
-            /*
-            * ioPDB set to         drives digit
-            * ------------         ------------
-            * xxx1001x               0 (leftmost)
-            * xxx1010x               1
-            * xxx1011x               2
-            * xxx1100x               3
-            * xxx1101x               4
-            * xxx1110x               5 (rightmost)
-            * */
-
-            ioPAD = value;
-            handle();
-
-            break;
-        case aIoPADD:
-            ioPADD = value;
-            handle();
-            break;
-
-        case aIoPBD:
-            ioPBD = value & ioPBDD;
-            handle();
-            break;
-
-        case aIoPBDD:
-            ioPBDD = value;
-            handle();
-            break;
-
-        default:
-            break;
-        }
+        riotIo002->write(address, value);
     }
 
     if (address < 0x17C0)

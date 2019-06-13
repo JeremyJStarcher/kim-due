@@ -22,6 +22,7 @@
 uint8_t curkey = 0;
 uint8_t eepromProtect = 1; // default is to write-protect EEPROM
 int blitzMode = 1;         // microchess status variable. 1 speeds up chess moves (and dumbs down play)
+uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
 
 char threeHex[3][2]; // LED display
 

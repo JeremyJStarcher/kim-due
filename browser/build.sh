@@ -17,7 +17,7 @@ SOURCE="${SOURCE} ${CSRC}/kim-hardware.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIoBase.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIo.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIoRom.cpp"
-
+SOURCE="${SOURCE} ${CSRC}/MemIo/Riot002.cpp"
 
 echo "SOURCE: ${SOURCE}"
 echo "CSRC: ${CSRC}"
