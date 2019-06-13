@@ -399,19 +399,6 @@ uint8_t read6502(uint16_t address)
     }                                          // 0x0800-0x1700 is empty space, should not be read
 #endif
 
-    if (address < 0x1700)
-    { // read in empty space
-        serout('%');
-        serout('5'); // error code 5 - read in empty space
-        return (0);
-    }
-    if (address < 0x1740)
-    { // 0x1700-0x1740 is IO space of RIOT 003
-        serout('%');
-        serout('7'); // trap code 7 - read in I/O 003
-        return (0);
-    }
-
     if (riotIo002->inRange(address))
     {
         return riotIo002->read(address);
@@ -459,6 +446,7 @@ uint8_t read6502(uint16_t address)
             pc = 0x1C4F;                 // skip subroutine
             return (0xEA);               // and return from subroutine with a fake NOP instruction
         }
+
         if (address == 0x1F1F)
         { // intercept SCANDS (display F9,FA,FB)
             // light LEDs ---------------------------------------------------------
@@ -610,11 +598,7 @@ uint8_t read6502(uint16_t address)
         return (pgm_read_byte_near(monitor + address - 0xFC00));
     }
 
-    //serout('%');
-    //serout('9');
-
-    // This should never be reached unless some addressing bug, so return 6502 BRK
-    return (0);
+    return (0xE1);
 }
 
 void write6502(uint16_t address, uint8_t value)
