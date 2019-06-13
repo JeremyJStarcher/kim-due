@@ -7,10 +7,10 @@
 #include "../builtin_display.h"
 #include "../serial_display.h"
 
-#define aIoPAD 0x1740
-#define aIoPADD 0x1741
-#define aIoPBD 0x1742
-#define aIoPBDD 0x1743
+#define ioSAD 0x1740 // 6530 A Data
+#define aIoPADD 0x1741 // 6530 A Data Direction
+#define ioSBD 0x1742 // 6530 B Data
+#define aIoPBDD 0x1743 // 6530 B Data Direction
 
 // #define EMULATE_KEYBOARD
 
@@ -134,7 +134,7 @@ uint8_t MemIoRiot002::read(uint16_t address)
 
     switch (address)
     {
-    case aIoPAD:
+    case ioSAD:
         switch (ioPBD & 0x07)
         {
             /* See the keyboard.cpp for details */
@@ -162,7 +162,7 @@ uint8_t MemIoRiot002::read(uint16_t address)
         ret = ioPADD;
         break;
 
-    case aIoPBD:
+    case ioSBD:
         ret = ioPBD;
         ret &= ~ioPBDD;
         break;
@@ -188,7 +188,7 @@ void MemIoRiot002::write(uint16_t address, uint8_t value)
 {
     switch (address)
     {
-    case aIoPAD:
+    case ioSAD:
 
         /*
             * ioPDB set to         drives digit
@@ -210,7 +210,7 @@ void MemIoRiot002::write(uint16_t address, uint8_t value)
         processIoChange();
         break;
 
-    case aIoPBD:
+    case ioSBD:
         ioPBD = value & ioPBDD;
         processIoChange();
         break;
