@@ -22,7 +22,5 @@ void MemIoRom::install(
     this->start_range = start_range;
     this->end_range = end_range;
 
-    size_t len = end_range - start_range;
-    // this->data = (uint8_t *)malloc(len);
     this->data = data;
 }
