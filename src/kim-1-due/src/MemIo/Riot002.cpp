@@ -37,7 +37,7 @@ void MemIoRiot002::processIoChange()
 {
     uint8_t led;
     uint8_t code;
-   /* The LED port values start at 9 and work up
+    /* The LED port values start at 9 and work up
     * by increments of two:
     *  Port B Data Register       LED #
     * ---------------------       -----
@@ -109,8 +109,8 @@ uint8_t MemIoRiot002::read(uint16_t address)
     serout('%');
     serout('6'); // trap code 6 - read in I/O 002
     return (0);
-}
 #else
+
     // The ROM needs the button held down for a certain length of
     // time as debounce technique.  Fake holding the button down.
     const uint8_t HOLDBUTTON_DELAY = 0x08; // Found by trial and error

@@ -1,20 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <Arduino.h>
+
+#ifdef TARGETWEB
+#include "fake-progmen.h"
+#include <emscripten/emscripten.h>
+#else
+#include <avr/pgmspace.h>
+#endif
 
 #include "MemIoRom.h"
 uint8_t MemIoRom::read(uint16_t address)
 {
     unsigned int offset = address - this->start_range;
-    uint8_t val = this->data[offset];
 
+#ifdef __AVR__
+    uint8_t ret = (pgm_read_byte_near(this->data + offset));
 #if 0
-    printf("StartRange %04x  ", this->start_range);
-    printf("Address: %04x  ", address);
-    printf("Offset %04x  ", offset);
-    printf("Val %02x  \n", val);
+    Serial.print(" ");
+    Serial.print(ret, HEX);
+    Serial.print(" ");
+    delay(1500);
 #endif
-
-    return val;
+    return ret;
+#else
+    return this->data[offset];
+#endif
 }
 
 void MemIoRom::install(

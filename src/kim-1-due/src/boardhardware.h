@@ -17,14 +17,15 @@
 #define USE_EPROM
 #define CALC_RAM_SIZE
 #define ONBOARD_RAM 1024
+#define EMULATE_KEYBOARD
 #endif
 
 #ifdef TARGETWEB
 #define BOARD_LED_MAX7219 false
 #define BOARD_WIRED_LED false
 #else
-#define BOARD_LED_MAX7219 true
-#define BOARD_WIRED_LED false
+#define BOARD_LED_MAX7219 false
+#define BOARD_WIRED_LED true
 #endif
 
 #if BOARD_LED_MAX7219

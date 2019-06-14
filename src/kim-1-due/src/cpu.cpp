@@ -482,9 +482,6 @@ uint8_t read6502(uint16_t address)
                 a = 0xFF; // that's how AK wants to see 'no key'
             pc = 0x1F14;  // skip subroutine
 
-            Serial.print("AK = ");
-            Serial.println(a);
-
             return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now RTS at its end
         }
 #endif
