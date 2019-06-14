@@ -14,7 +14,7 @@
 class MemIoRom : public MemIoBase
 {
 private:
-    mutable uint8_t *data PROGMEM;
+    const uint8_t *data PROGMEM;
 
 public:
     uint8_t read(uint16_t address);

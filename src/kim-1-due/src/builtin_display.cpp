@@ -131,6 +131,10 @@ void init_display()
     convert_led_pattern();
 }
 
+void driveLED(uint8_t led, uint8_t n)
+{
+}
+
 void driveLEDs()
 {
     int led, col, ledNo, currentBit, bitOn;
