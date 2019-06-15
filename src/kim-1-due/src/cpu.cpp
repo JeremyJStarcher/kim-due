@@ -18,6 +18,7 @@
 #endif
 
 #include "MemIo/MemIo.h"
+#include "MemIo/MemIoRam.h"
 #include "MemIo/MemIoRom.h"
 #include "MemIo/Riot002.h"
 
@@ -44,6 +45,12 @@ MemIo *memio = new MemIo();
 MemIoRom *rom1 = new MemIoRom();
 MemIoRom *rom2 = new MemIoRom();
 MemIoRiot002 *riotIo002 = new MemIoRiot002();
+MemIoRam *ramMain = new MemIoRam();
+MemIoRam *ramRiot002 = new MemIoRam();
+MemIoRam *ramRiot003 = new MemIoRam();
+
+void write6502(uint16_t address, uint8_t value);
+uint8_t read6502(uint16_t address);
 
 void getBin(int num, char *str)
 {
@@ -761,18 +768,18 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
 
     uint8_t fbkDemo[9] = {
         0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
+    write6502(0x0010, 0x10);
+    write6502(0x0011, 0x11);
 
     //uint8_t fbkDemo[13] = {
     //    0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
-    RAM[0x0010] = 0x10;
-    RAM[0x0011] = 0x11;
 
     // #define fbkDemo astroid
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
     for (i = 0; i < l; i++)
     {
-        RAM[i + 0x0200] = fbkDemo[i];
+        write6502(i + 0x0200, fbkDemo[i]);
     }
 
     // load fltpt65 demo program
