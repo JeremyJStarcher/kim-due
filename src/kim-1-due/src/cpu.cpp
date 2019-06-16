@@ -411,14 +411,14 @@ uint8_t read6502(uint16_t address)
         return riotIo002->read(address);
     }
 
-    if (address < 0x17C0)
-    { // 0x1780-0x17C0 is RAM from RIOT 003
-        return (RAM003[address - 0x1780]);
+    if (ramRiot003->inRange(address))
+    {
+        return ramRiot003->read(address);
     }
 
-    if (address < 0x1800)
-    { // 0x17C0-0x1800 is RAM from RIOT 002
-        return (RAM002[address - 0x17C0]);
+    if (ramRiot002->inRange(address))
+    {
+        return ramRiot002->read(address);
     }
 
     if (address < 0x2000)
@@ -442,8 +442,8 @@ uint8_t read6502(uint16_t address)
 
             clearkey();
             x = read6502(0x00FD); // x is saved in TMPX by getch routine, we need to get it back in x;
-            pc = 0x1E87;     // skip subroutine
-            return (0xEA);   // and return from subroutine with a fake NOP instruction
+            pc = 0x1E87;          // skip subroutine
+            return (0xEA);        // and return from subroutine with a fake NOP instruction
         }
 
         if (address == 0x1C2A)
@@ -609,7 +609,7 @@ void write6502(uint16_t address, uint8_t value)
 {
     if (ramMain->inRange(address))
     {
-         ramMain->write(address, value);
+        ramMain->write(address, value);
     }
 
 #ifdef USE_EPROM
@@ -638,15 +638,14 @@ void write6502(uint16_t address, uint8_t value)
         riotIo002->write(address, value);
     }
 
-    if (address < 0x17C0)
-    { // RAM 003
-        RAM003[address - 0x1780] = value;
-        return;
+    if (ramRiot003->inRange(address))
+    {
+        ramRiot003->write(address, value);
     }
-    if (address < 0x1800)
-    { // RAM002
-        RAM002[address - 0x17C0] = value;
-        return;
+
+    if (ramRiot002->inRange(address))
+    {
+        ramRiot002->write(address, value);
     }
 
     if ((address >= 0x5000) && (address <= 0x6FDF))
@@ -713,13 +712,15 @@ void initKIM()
     rom1->install(0x1800, 0x1BFF, cassette);
     rom2->install(0x1C00, 0x1FFF, monitor);
     ramMain->install(0x0000, ONBOARD_RAM, RAM);
+    ramRiot003->install(0x1780, 0x17BF, RAM003);
+    ramRiot002->install(0x17C0, 0x17FF, RAM002);
 
     uint16_t i;
 
-    RAM002[(0x17FA) - (0x17C0)] = 0x00;
-    RAM002[(0x17FB) - (0x17C0)] = 0x1C;
-    RAM002[(0x17FE) - (0x17C0)] = 0x00;
-    RAM002[(0x17FF) - (0x17C0)] = 0x1C;
+    write6502(0x17FA, 0x00);
+    write6502(0x17FB, 0x1C);
+    write6502(0x17FE, 0x00);
+    write6502(0x17FF, 0x1C);
 
     // the code below copies movit (a copy routine) to 0x1780 in RAM. It can be
     // overwritten by users - it's an extra note that the HTML version of the
