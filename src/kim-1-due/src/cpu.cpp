@@ -1572,6 +1572,8 @@ void irq6502()
     //	pc = 0x1C1F;
 }
 
+#define USE_TIMING
+
 #ifdef USE_TIMING
 prog_char ticktable[256] PROGMEM = {
     /*        |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  A  |  B  |  C  |  D  |  E  |  F  |     */
