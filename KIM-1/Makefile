@@ -1,4 +1,4 @@
-SUBDIRS = "tools" "ROMs" "TheFirstBookOfKIM"  Misc TinyBasic fltpt65_uno
+SUBDIRS = "tools" "ROMs" "TheFirstBookOfKIM"  Misc TinyBasic fltpt65_uno microchess
 # 	Microchess
 
 all:
