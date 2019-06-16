@@ -394,9 +394,9 @@ uint8_t read6502(uint16_t address)
 {
     uint8_t tempval = 0;
 
-    if (address < ONBOARD_RAM)
+    if (ramMain->inRange(address))
     {
-        return (RAM[address]);
+        return ramMain->read(address);
     }
 
 #ifdef USE_EPROM
@@ -441,7 +441,7 @@ uint8_t read6502(uint16_t address)
             }
 
             clearkey();
-            x = RAM[0x00FD]; // x is saved in TMPX by getch routine, we need to get it back in x;
+            x = read6502(0x00FD); // x is saved in TMPX by getch routine, we need to get it back in x;
             pc = 0x1E87;     // skip subroutine
             return (0xEA);   // and return from subroutine with a fake NOP instruction
         }
@@ -458,20 +458,20 @@ uint8_t read6502(uint16_t address)
         { // intercept SCANDS (display F9,FA,FB)
             // light LEDs ---------------------------------------------------------
             if (
-                threeHex[0][0] != (RAM[0x00FB] & 0xF0) >> 4 ||
-                threeHex[0][1] != (RAM[0x00FB] & 0xF) ||
-                threeHex[1][0] != (RAM[0x00FA] & 0xF0) >> 4 ||
-                threeHex[1][1] != (RAM[0x00FA] & 0xF) ||
-                threeHex[2][0] != (RAM[0x00F9] & 0xF0) >> 4 ||
-                threeHex[2][1] != (RAM[0x00F9] & 0xF))
+                threeHex[0][0] != (read6502(0x00FB) & 0xF0) >> 4 ||
+                threeHex[0][1] != (read6502(0x00FB) & 0xF) ||
+                threeHex[1][0] != (read6502(0x00FA) & 0xF0) >> 4 ||
+                threeHex[1][1] != (read6502(0x00FA) & 0xF) ||
+                threeHex[2][0] != (read6502(0x00F9) & 0xF0) >> 4 ||
+                threeHex[2][1] != (read6502(0x00F9) & 0xF))
             {
 
-                threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
-                threeHex[0][1] = RAM[0x00FB] & 0xF;
-                threeHex[1][0] = (RAM[0x00FA] & 0xF0) >> 4;
-                threeHex[1][1] = RAM[0x00FA] & 0xF;
-                threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
-                threeHex[2][1] = RAM[0x00F9] & 0xF;
+                threeHex[0][0] = (read6502(0x00FB) & 0xF0) >> 4;
+                threeHex[0][1] = read6502(0x00FB) & 0xF;
+                threeHex[1][0] = (read6502(0x00FA) & 0xF0) >> 4;
+                threeHex[1][1] = read6502(0x00FA) & 0xF;
+                threeHex[2][0] = (read6502(0x00F9) & 0xF0) >> 4;
+                threeHex[2][1] = read6502(0x00F9) & 0xF;
             }
             serial_scands();
             // driveLEDs();
@@ -585,12 +585,12 @@ uint8_t read6502(uint16_t address)
     {
         // simulated keyboard input 0=no key press, 1 = key press light LEDs
 
-        threeHex[0][0] = (RAM[0x00FB] & 0xF0) >> 4;
-        threeHex[0][1] = RAM[0x00FB] & 0xF;
-        threeHex[1][0] = (RAM[0x00FA] & 0xF0) >> 4;
-        threeHex[1][1] = RAM[0x00FA] & 0xF;
-        threeHex[2][0] = (RAM[0x00F9] & 0xF0) >> 4;
-        threeHex[2][1] = RAM[0x00F9] & 0xF;
+        threeHex[0][0] = (read6502(0x00FB) & 0xF0) >> 4;
+        threeHex[0][1] = read6502(0x00FB) & 0xF;
+        threeHex[1][0] = (read6502(0x00FA) & 0xF0) >> 4;
+        threeHex[1][1] = read6502(0x00FA) & 0xF;
+        threeHex[2][0] = (read6502(0x00F9) & 0xF0) >> 4;
+        threeHex[2][1] = read6502(0x00F9) & 0xF;
         driveLEDs();
 
         return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
@@ -607,10 +607,9 @@ uint8_t read6502(uint16_t address)
 
 void write6502(uint16_t address, uint8_t value)
 {
-    if (address < ONBOARD_RAM)
+    if (ramMain->inRange(address))
     {
-        RAM[address] = value;
-        return;
+         ramMain->write(address, value);
     }
 
 #ifdef USE_EPROM
@@ -713,9 +712,7 @@ void initKIM()
 {
     rom1->install(0x1800, 0x1BFF, cassette);
     rom2->install(0x1C00, 0x1FFF, monitor);
-
-    uint8_t vect_lo = rom2->read(0x1C00);
-    uint8_t vect_high = rom2->read(0x1FFF);
+    ramMain->install(0x0000, ONBOARD_RAM, RAM);
 
     uint16_t i;
 

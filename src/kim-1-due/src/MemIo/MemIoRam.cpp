@@ -4,8 +4,6 @@
 #include "MemIoRam.h"
 uint8_t MemIoRam::read(uint16_t address)
 {
-    printf("read6502 %04x\n", address);
-
     unsigned int offset = address - this->start_range;
     return this->data[offset];
 }
