@@ -11,6 +11,7 @@ cp ../src/kim-1-due/src ${CSRC} -Rv
 SOURCE="src/c/main.c"
 SOURCE="src/c/serial_display.cpp"
 SOURCE="${SOURCE} ${CSRC}/webmain.cpp"
+SOURCE="${SOURCE} ${CSRC}/memory.cpp"
 SOURCE="${SOURCE} ${CSRC}/cpu.cpp"
 SOURCE="${SOURCE} ${CSRC}/builtin_display.cpp"
 SOURCE="${SOURCE} ${CSRC}/kim-hardware.cpp"

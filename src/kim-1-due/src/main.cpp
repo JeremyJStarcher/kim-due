@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "memory.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "builtin_display.h"

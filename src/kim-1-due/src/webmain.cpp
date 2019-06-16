@@ -1,5 +1,6 @@
 #ifdef TARGETWEB
 
+#include "memory.h"
 #include "cpu.h"
 #include "builtin_display.h"
 #include "kim-hardware.h"

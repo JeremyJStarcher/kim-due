@@ -14,6 +14,8 @@ uint8_t xkeyPressed(void);
 void scanKeys(void);
 void clearkey(void);
 uint8_t getKIMkey();           // for emulation of KIM keypad
+uint8_t getAkey(void); // for serial port get normal ASCII keys
+
 extern uint8_t useKeyboardLed;
 
 extern uint8_t curkey;

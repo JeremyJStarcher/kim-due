@@ -1,6 +1,17 @@
 #ifndef BOARDHARDWARE_H
 #define BOARDHARDWARE_H
 
+// For EMULATE_KEYBOARD
+// Option 1:
+//   Emulate all of the keyboard handling by hijacking the keyboard ROM
+//   routines and replacing them with native code and return the right
+//   values back.  This is the absolute fastest approach.
+// Option 2:
+//   Mimic the RIOT chip and play with the ports. The ROM will see it
+//   like real hardware.
+//   MUCH slower but slightly more compatible.
+
+
 #if defined(__arm__)
 #define ONBOARD_RAM 0x04FF
 #endif
