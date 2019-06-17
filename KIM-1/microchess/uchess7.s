@@ -101,6 +101,7 @@ KEY_PC	=	$14
 
 SCANDS	=	$1F1F
 GETKEY	=	$1F6A
+OUTCH	=	$1EA0
 
         .org  $C000
 
@@ -119,10 +120,12 @@ CHESS	CLD				; INITIALIZE
 ;       FROM KEYBOARD
 ;		
 
-OUT:    JSR     SCANDS          ; DISPLAY AND
+OUT:
+	JSR	POUT		; PRINT BOARD
+OUTL	JSR     SCANDS          ; DISPLAY AND
         JSR     GETKEY          ; GET INPUT
         CMP     OLDKY           ; KEY IN ACC
-        BEQ     OUT             ; (DEBOUNCE)
+        BEQ     OUTL            ; (DEBOUNCE)
 	STA 	OLDKY
 
 	CMP	#KEY_C		; [C]
@@ -850,14 +853,17 @@ syskin	lda   $CFF3	; used to beF003 ; ACIASta ; Serial port status
 ;
 ; output to OutPut Port
 ;
-syschout   ;    PHA                      ; save registers
+syschout	JSR OUTCH		; Call the ROM character out
+		RTS			; And return
+
+   	   ;    PHA                      ; save registers
 ACIA_Out1  ;    lda   ACIASta            ; serial port status
            ;    and   #$10               ; is tx buffer empty
            ;    beq   ACIA_Out1          ; no
            ;    PLA                      ; get chr
            ;    sta   ACIAdat            ; put character to Port
-		sta $CFF1 ; used to be F001 ; write to simulated output port
-               RTS                      ; done
+           ; 	sta $CFF1 ; used to be F001 ; write to simulated output port
+           ;    RTS                      ; done
 
 syshexout:
 	PHA                     ;  prints AA hex digits
