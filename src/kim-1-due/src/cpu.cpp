@@ -431,7 +431,7 @@ uint8_t read6502(uint16_t address)
     // $F003: 0 = no key pressed, 1 key pressed
     // $F004: input from user
     // (also, in write6502: $F001: output character to display)
-    if (address == 0xCFF4)
+    if (address == 0xCFF4 && false)
     { //simulated keyboard input
         tempval = getAkey();
         clearkey();
@@ -461,7 +461,7 @@ uint8_t read6502(uint16_t address)
         clear_display();
         return (tempval);
     }
-    if (address == 0xCFF3)
+    if (address == 0xCFF3 && false)
     {
         // simulated keyboard input 0=no key press, 1 = key press light LEDs
 
@@ -499,19 +499,6 @@ void write6502(uint16_t address, uint8_t value)
         return;
     }
 #endif
-
-    if (address < 0x1700)
-    { // illegal access
-        serout('%');
-        serout('1'); // error code 1 - write in empty space
-        return;
-    }
-    if (address < 0x1740)
-    { // I/O 003
-        serout('%');
-        serout('3'); // trap code 3 - io3 access
-        return;
-    }
 
     if (riotIo002->inRange(address))
     {
