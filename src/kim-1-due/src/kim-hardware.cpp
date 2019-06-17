@@ -8,7 +8,6 @@
 
 #include "host-leds.h"
 #include "cpu.h"
-#include "keypad.h"
 #include "kim-hardware.h"
 #include "host-hardware.h"
 
@@ -203,76 +202,76 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
     { //KIM Uno keyscan codes to ASCII codes used by emulator
     case 7:
         c = VKEY_0;
-        break; //        note: these are n-1 numbers!
+        break;
     case 6:
         c = VKEY_1;
-        break; //
+        break;
     case 5:
         c = VKEY_2;
-        break; //
+        break;
     case 4:
         c = VKEY_3;
-        break; //
+        break;
     case 3:
         c = VKEY_4;
-        break; //
+        break;
     case 2:
         c = VKEY_5;
-        break; //
+        break;
     case 1:
         c = VKEY_6;
-        break; //
+        break;
     case 0:
         c = VKEY_ST;
-        break; // ST
+        break;
     case 15:
         c = VKEY_7;
-        break; //
+        break;
     case 14:
         c = VKEY_8;
-        break; //
+        break;
     case 13:
         c = VKEY_9;
-        break; //
+        break;
     case 12:
         c = VKEY_A;
-        break; //
+        break;
     case 11:
         c = VKEY_B;
-        break; //
+        break;
     case 10:
         c = VKEY_C;
-        break; //
+        break;
     case 9:
         c = VKEY_D;
-        break; //
+        break;
     case 8:
         c = VKEY_RS;
-        break; // RS
+        break;
     case 23:
         c = VKEY_E;
-        break; //
+        break;
     case 22:
         c = VKEY_F;
-        break; //
+        break;
     case 21:
         c = VKEY_AD;
-        break; // AD
+        break;
     case 20:
         c = VKEY_DA;
-        break; // DA
+        break;
     case 19:
         c = VKEY_PLUS;
-        break; // +
+        break;
     case 18:
         c = VKEY_GO;
-        break; // GO
+        break;
     case 17:
         c = VKEY_PC;
-        break; // PC
+        break;
     case 16:
         c = (SSTmode == 0 ? VKEY_SST_ON : VKEY_SST_OFF);
-        break; // 	SST toggle
+        break;
     }
 
     return c;
