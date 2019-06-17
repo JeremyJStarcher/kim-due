@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-#include "builtin_display.h"
+#include "host-leds.h"
 #include "cpu.h"
 #include "keypad.h"
 #include "kim-hardware.h"

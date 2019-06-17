@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include "builtin_display.h"
+#include "host-leds.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "host-hardware.h"
@@ -20,32 +20,8 @@ void convert_led_pattern(void);
 const int delaytime = 150;
 static uint8_t xlate_led_pattern[256];
 
-uint8_t dig[19] = {
-    // bits     6543210
-    // digits   abcdefg
-    0b01111110, //0
-    0b00110000, //1
-    0b01101101, //2
-    0b01111001, //3
-    0b00110011, //4
-    0b01011011, //5
-    0b01011111, //6
-    0b01110000, //7
-    0b01111111, //8
-    0b01111011, //9
-    0b01110111, //a
-    0b00011111, //b
-    0b01001110, //c
-    0b00111101, //d
-    0b01001111, //e
-    0b01000111, //f
-    0b00000001, //g printed as -
-    0b00001000, //h printed as _
-    0b00000000  //i printed as <space>
-};
-
 #ifdef TARGETWEB
-#include "../../../browser/src/c/builtin_display.cpp"
+#include "../../../browser/src/c/host-leds.cpp"
 #endif
 
 #if BOARD_LED_MAX7219
@@ -159,4 +135,3 @@ void convert_led_pattern(void)
         xlate_led_pattern[i] = result;
     }
 }
-

@@ -29,7 +29,7 @@
 #include "roms/uchess7.h"
 #include "cpu.h"
 #include "host-hardware.h"
-#include "builtin_display.h"
+#include "host-leds.h"
 #include "serial_display.h"
 #include "kim-hardware.h"
 
