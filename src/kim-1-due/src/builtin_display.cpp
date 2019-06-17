@@ -80,24 +80,6 @@ void init_display()
     clear_display();
 }
 
-void driveLEDs()
-{
-    int ledNo;
-    int byt, i;
-    int out;
-
-    for (byt = 0; byt < 3; byt++)
-    {
-        for (i = 0; i < 2; i++)
-        {
-            ledNo = byt * 2 + i;
-            char bcd = threeHex[byt][i];
-            out = dig[(int)bcd];
-            display.sendRawByte(t_8_6[ledNo], out);
-        }
-    }
-}
-
 void driveLED(uint8_t led, uint8_t n)
 {
     // Cheap anti-flicker
@@ -134,39 +116,6 @@ void init_display()
 void driveLED(uint8_t led, uint8_t n)
 {
 }
-
-void driveLEDs()
-{
-    int led, col, ledNo, currentBit, bitOn;
-    int byt, i;
-
-    // 1. initialse for driving the 6 (now 8) 7segment LEDs
-    // ledSelect pins drive common anode for [all segments] in [one of 6 LEDs]
-    for (led = 0; led < 7; led++)
-    {
-        pinMode(ledSelect[led], OUTPUT);   // set led pins to output
-        digitalWrite(ledSelect[led], LOW); // LOW = not lit
-    }
-    // 2. switch column pins to output mode
-    // column pins are the cathode for the LED segments
-    // lame code to cycle through the 3 bytes of 2 digits each = 6 leds
-    for (byt = 0; byt < 3; byt++)
-        for (i = 0; i < 2; i++)
-        {
-            ledNo = byt * 2 + i;
-            for (col = 0; col < 8; col++)
-            {
-                pinMode(aCols[col], OUTPUT); // set pin to output
-                //currentBit = (1<<(6-col));             // isolate the current bit in loop
-                currentBit = (1 << (7 - col)); // isolate the current bit in loop
-                bitOn = (currentBit & dig[(int)threeHex[byt][i]]) == 0;
-                digitalWrite(aCols[col], bitOn); // set the bit
-            }
-            digitalWrite(ledSelect[ledNo], HIGH); // Light this LED
-            delay(2);
-            digitalWrite(ledSelect[ledNo], LOW); // unLight this LED
-        }
-} // end of function
 
 void clear_display()
 {

@@ -273,7 +273,6 @@ const uint8_t disasm[505] PROGMEM = {
     0x26, 0x72, 0x72, 0x88, 0xC8, 0xC4, 0xCA, 0x26, 0x48, 0x44, 0x44, 0xA2,
     0xC8};
 
-
 uint8_t read6502(uint16_t address)
 {
     uint8_t tempval = 0;
@@ -358,10 +357,6 @@ uint8_t read6502(uint16_t address)
                 threeHex[2][1] = read6502(0x00F9) & 0xF;
             }
             serial_scands();
-            // driveLEDs();
-
-            //pc = 0x1F45;   // skip subroutine part that deals with LEDs
-            //return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
         }
 
 #ifdef EMULATE_KEYBOARD
@@ -425,55 +420,6 @@ uint8_t read6502(uint16_t address)
     if (romuchess7->inRange(address))
     {
         return romuchess7->read(address);
-    }
-
-    // I/O functions just for Microchess: ---------------------------------------------------
-    // $F003: 0 = no key pressed, 1 key pressed
-    // $F004: input from user
-    // (also, in write6502: $F001: output character to display)
-    if (address == 0xCFF4 && false)
-    { //simulated keyboard input
-        tempval = getAkey();
-        clearkey();
-        // translate KIM-1 button codes into ASCII code expected by this version of Microchess
-        switch (tempval)
-        {
-        case 16:
-            tempval = 'P';
-            break; // PC translated to P
-        case 'F':
-            tempval = 13;
-            break; // F translated to Return
-        case '+':
-            tempval = 'W';
-            break; // + translated to W meaning Blitz mode toggle
-        }
-        if (tempval == 0x57)
-        { // 'W'. If user presses 'W', he wants to enable Blitz mode.
-            if (blitzMode == 1)
-                (blitzMode = 0);
-            else
-                (blitzMode = 1);
-            serout('>');
-            serout((blitzMode == 1) ? 'B' : 'N');
-            serout('<');
-        }
-        clear_display();
-        return (tempval);
-    }
-    if (address == 0xCFF3 && false)
-    {
-        // simulated keyboard input 0=no key press, 1 = key press light LEDs
-
-        threeHex[0][0] = (read6502(0x00FB) & 0xF0) >> 4;
-        threeHex[0][1] = read6502(0x00FB) & 0xF;
-        threeHex[1][0] = (read6502(0x00FA) & 0xF0) >> 4;
-        threeHex[1][1] = read6502(0x00FA) & 0xF;
-        threeHex[2][0] = (read6502(0x00F9) & 0xF0) >> 4;
-        threeHex[2][1] = read6502(0x00F9) & 0xF;
-        driveLEDs();
-
-        return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
     }
 
     if (address >= 0xFFFA)
@@ -579,8 +525,8 @@ void initKIM()
 {
     rom1->install(0x1800, 0x1BFF, cassette);
     rom2->install(0x1C00, 0x1FFF, monitor);
-    romuchess7->install(0xC000, 0xC000 +  (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
-    
+    romuchess7->install(0xC000, 0xC000 + (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
+
     ramMain->install(0x0000, ONBOARD_RAM, RAM);
 
     uint16_t i;
