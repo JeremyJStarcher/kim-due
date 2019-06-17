@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "boardhardware.h"
+#include "host-hardware.h"
 
 uint16_t getpc();
 uint8_t getop();

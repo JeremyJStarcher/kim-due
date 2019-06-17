@@ -3,7 +3,7 @@
 #include "Riot002.h"
 #include "../kim-hardware.h"
 
-#include "../boardhardware.h"
+#include "../host-hardware.h"
 #include "../builtin_display.h"
 #include "../serial_display.h"
 

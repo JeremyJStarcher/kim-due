@@ -1,8 +1,11 @@
-#ifndef BOARDHARDWARE_H
-#define BOARDHARDWARE_H
+#ifndef HOSTHARDWARE_H
+#define HOSTHARDWARE_H
+
+#include <stdint.h>
 
 #if defined(__arm__)
 #define ONBOARD_RAM 0x04FF
+#define HOST_KEYBOARD_KIM_UNO
 #endif
 
 #if defined(TARGETWEB)
@@ -32,10 +35,12 @@
 #define LED_CS 15
 #endif
 
+#ifdef HOST_KEYBOARD_KIM_UNO
 extern uint8_t aCols[8];
 extern uint8_t aRows[3];
 
 extern uint8_t ledSelect[8];
 extern uint8_t ledSelect7[8];
+#endif
 
 #endif

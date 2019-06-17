@@ -28,7 +28,7 @@
 #include "roms/astroid.h"
 #include "roms/uchess7.h"
 #include "cpu.h"
-#include "boardhardware.h"
+#include "host-hardware.h"
 #include "builtin_display.h"
 #include "serial_display.h"
 #include "kim-hardware.h"

@@ -3,7 +3,7 @@
 #include "builtin_display.h"
 #include "cpu.h"
 #include "kim-hardware.h"
-#include "boardhardware.h"
+#include "host-hardware.h"
 
 #if BOARD_LED_MAX7219
 #include <SPI.h>

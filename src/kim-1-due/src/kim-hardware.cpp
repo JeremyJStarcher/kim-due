@@ -10,7 +10,7 @@
 #include "cpu.h"
 #include "keypad.h"
 #include "kim-hardware.h"
-#include "boardhardware.h"
+#include "host-hardware.h"
 
 #ifdef USE_EPROM
 #include <EEPROM.h>
