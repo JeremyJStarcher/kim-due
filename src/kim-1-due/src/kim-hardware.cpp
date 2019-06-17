@@ -20,8 +20,8 @@
 #define WREG_OFFSET 0x0360
 
 uint8_t curkey = 0;
-uint8_t eepromProtect = 1; // default is to write-protect EEPROM
-int blitzMode = 1;         // microchess status variable. 1 speeds up chess moves (and dumbs down play)
+uint8_t eepromProtect = 1;     // default is to write-protect EEPROM
+int blitzMode = 1;             // microchess status variable. 1 speeds up chess moves (and dumbs down play)
 uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
 
 char threeHex[3][2]; // LED display
@@ -284,6 +284,7 @@ void scanKeys()
     static int keyCode = -1, prevKey = 0;
     static unsigned long timeFirstPressed = 0;
 
+#ifdef BOARD_WIRED_LED
     // 0. disable driving the 7segment LEDs -----------------
     for (led = 0; led < 8; led++)
     {
@@ -292,7 +293,7 @@ void scanKeys()
         // from driving either high or low.
         digitalWrite(ledSelect[led], HIGH); // Use builtin pullup resistors
     }
-
+#endif
 
     // 1. initialise: set columns to input with pullups
     for (col = 0; col < 8; col++)
