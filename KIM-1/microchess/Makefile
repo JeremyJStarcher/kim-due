@@ -14,6 +14,7 @@ uchess7.bin: uchess7.o
 
 uchess7.o:	uchess7.s
 	ca65 -g -l uchess7.lst --feature labels_without_colons uchess7.s
+	ca65 -g -l uchess7-kimuno.lst --feature labels_without_colons uchess7-kimuno.s
 
 clean:
 	$(RM) *.o *.lst *.map *.bin *.ptp *.c
