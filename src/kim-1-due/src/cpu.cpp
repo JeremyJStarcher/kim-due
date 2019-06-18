@@ -273,7 +273,6 @@ const uint8_t disasm[505] PROGMEM = {
     0x26, 0x72, 0x72, 0x88, 0xC8, 0xC4, 0xCA, 0x26, 0x48, 0x44, 0x44, 0xA2,
     0xC8};
 
-
 uint8_t read6502(uint16_t address)
 {
     uint8_t tempval = 0;
@@ -592,8 +591,8 @@ void initKIM()
 {
     rom1->install(0x1800, 0x1BFF, cassette);
     rom2->install(0x1C00, 0x1FFF, monitor);
-    romuchess7->install(0xC000, 0xC000 +  (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
-    
+    romuchess7->install(0xC000, 0xC000 + (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
+
     ramMain->install(0x0000, ONBOARD_RAM, RAM);
 
     uint16_t i;
@@ -643,17 +642,18 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
 {
     uint16_t i;
 
+    /*
     // the first program from First Book of KIM...
-
     uint8_t fbkDemo[9] = {
         0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
     write6502(0x0010, 0x10);
     write6502(0x0011, 0x11);
+    // */
 
     //uint8_t fbkDemo[13] = {
     //    0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
 
-    // #define fbkDemo astroid
+#define fbkDemo astroid
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
     for (i = 0; i < l; i++)
