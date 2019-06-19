@@ -1,5 +1,18 @@
 "use strict";
 
+function welcomeMessage() {
+	const bytes = Array.from(
+		`\r\n\r\r\n\r\n` +
+		`This is the KIM-1 terminal.\r\n\r\n` +
+		`The original KIM-1 could be connected to either a teletype` +
+		` (somthing like a huge noisy electric typewriter)` +
+		` or a electronic terminal.` +
+		`\r\n\r\n`
+	).map((_, i, a) => ("" + _).charCodeAt(0));
+
+	bytes.forEach(b => serialPrint(b));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 	// In order to twiddle the SVG, it must be directly inlined.
 	// 
@@ -14,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const ledbar = document.querySelector(`#ledbar-${i}`);
 		ledbar.appendChild(c);
 	}
+
 }, false);
 
 const ledTimer = [];
@@ -84,6 +98,7 @@ function onRuntimeInitialized() {
 	_websetup();
 	wireupKeyboard();
 	runloop();
+	welcomeMessage();
 }
 
 const serialPrint = (() => {
@@ -120,6 +135,10 @@ const serialPrint = (() => {
 			lines.push(cursor);
 		} else {
 			lines[lines.length - 1] = l_no_cursor + ch + cursor;
+		}
+
+		if (l_no_cursor.length === 80) {
+			serialPrint(13);
 		}
 
 		while (lines.length > rows) {
