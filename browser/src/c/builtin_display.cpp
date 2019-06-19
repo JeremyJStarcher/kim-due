@@ -53,5 +53,26 @@ void driveLED(uint8_t led, uint8_t n)
            led, p2);
 }
 
+void driveLEDs()
+{
+    int ledNo;
+    int byt, i;
+    int out;
+
+    for (byt = 0; byt < 3; byt++)
+    {
+        for (i = 0; i < 2; i++)
+        {
+            ledNo = byt * 2 + i;
+            char bcd = threeHex[byt][i];
+            out = dig[(int)bcd];
+            EM_ASM({
+                setLed($0, $1);
+            },
+                   ledNo, out);
+        }
+    }
+}
+
 void clear_display() {
 }

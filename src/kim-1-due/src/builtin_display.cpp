@@ -1,9 +1,9 @@
 #include <stdint.h>
 
-#include "host-leds.h"
+#include "builtin_display.h"
 #include "cpu.h"
 #include "kim-hardware.h"
-#include "host-hardware.h"
+#include "boardhardware.h"
 
 #if BOARD_LED_MAX7219
 #include <SPI.h>
@@ -20,8 +20,32 @@ void convert_led_pattern(void);
 const int delaytime = 150;
 static uint8_t xlate_led_pattern[256];
 
+uint8_t dig[19] = {
+    // bits     6543210
+    // digits   abcdefg
+    0b01111110, //0
+    0b00110000, //1
+    0b01101101, //2
+    0b01111001, //3
+    0b00110011, //4
+    0b01011011, //5
+    0b01011111, //6
+    0b01110000, //7
+    0b01111111, //8
+    0b01111011, //9
+    0b01110111, //a
+    0b00011111, //b
+    0b01001110, //c
+    0b00111101, //d
+    0b01001111, //e
+    0b01000111, //f
+    0b00000001, //g printed as -
+    0b00001000, //h printed as _
+    0b00000000  //i printed as <space>
+};
+
 #ifdef TARGETWEB
-#include "../../../browser/src/c/host-leds.cpp"
+#include "../../../browser/src/c/builtin_display.cpp"
 #endif
 
 #if BOARD_LED_MAX7219
@@ -54,6 +78,24 @@ void init_display()
     }
 
     clear_display();
+}
+
+void driveLEDs()
+{
+    int ledNo;
+    int byt, i;
+    int out;
+
+    for (byt = 0; byt < 3; byt++)
+    {
+        for (i = 0; i < 2; i++)
+        {
+            ledNo = byt * 2 + i;
+            char bcd = threeHex[byt][i];
+            out = dig[(int)bcd];
+            display.sendRawByte(t_8_6[ledNo], out);
+        }
+    }
 }
 
 void driveLED(uint8_t led, uint8_t n)
@@ -92,6 +134,39 @@ void init_display()
 void driveLED(uint8_t led, uint8_t n)
 {
 }
+
+void driveLEDs()
+{
+    int led, col, ledNo, currentBit, bitOn;
+    int byt, i;
+
+    // 1. initialse for driving the 6 (now 8) 7segment LEDs
+    // ledSelect pins drive common anode for [all segments] in [one of 6 LEDs]
+    for (led = 0; led < 7; led++)
+    {
+        pinMode(ledSelect[led], OUTPUT);   // set led pins to output
+        digitalWrite(ledSelect[led], LOW); // LOW = not lit
+    }
+    // 2. switch column pins to output mode
+    // column pins are the cathode for the LED segments
+    // lame code to cycle through the 3 bytes of 2 digits each = 6 leds
+    for (byt = 0; byt < 3; byt++)
+        for (i = 0; i < 2; i++)
+        {
+            ledNo = byt * 2 + i;
+            for (col = 0; col < 8; col++)
+            {
+                pinMode(aCols[col], OUTPUT); // set pin to output
+                //currentBit = (1<<(6-col));             // isolate the current bit in loop
+                currentBit = (1 << (7 - col)); // isolate the current bit in loop
+                bitOn = (currentBit & dig[(int)threeHex[byt][i]]) == 0;
+                digitalWrite(aCols[col], bitOn); // set the bit
+            }
+            digitalWrite(ledSelect[ledNo], HIGH); // Light this LED
+            delay(2);
+            digitalWrite(ledSelect[ledNo], LOW); // unLight this LED
+        }
+} // end of function
 
 void clear_display()
 {
@@ -135,3 +210,4 @@ void convert_led_pattern(void)
         xlate_led_pattern[i] = result;
     }
 }
+

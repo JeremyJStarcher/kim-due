@@ -1,7 +1,7 @@
 #ifdef TARGETWEB
 
 #include "cpu.h"
-#include "host-leds.h"
+#include "builtin_display.h"
 #include "kim-hardware.h"
 #include <emscripten/emscripten.h>
 

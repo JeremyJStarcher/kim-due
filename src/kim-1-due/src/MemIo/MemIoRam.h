@@ -5,7 +5,7 @@
 #include "MemIoBase.h"
 
 #ifdef TARGETWEB
-#include "../fake-progmem.h"
+#include "../fake-progmen.h"
 #include <emscripten/emscripten.h>
 #else
 #include <avr/pgmspace.h>

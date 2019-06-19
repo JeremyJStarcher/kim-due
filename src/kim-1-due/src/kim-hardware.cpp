@@ -1,15 +1,16 @@
 #ifdef TARGETWEB
-#include "fake-progmem.h"
+#include "fake-progmen.h"
 #else
 #include <Arduino.h>
 #endif
 
 #include <stdint.h>
 
-#include "host-leds.h"
+#include "builtin_display.h"
 #include "cpu.h"
+#include "keypad.h"
 #include "kim-hardware.h"
-#include "host-hardware.h"
+#include "boardhardware.h"
 
 #ifdef USE_EPROM
 #include <EEPROM.h>
@@ -19,8 +20,8 @@
 #define WREG_OFFSET 0x0360
 
 uint8_t curkey = 0;
-uint8_t eepromProtect = 1;     // default is to write-protect EEPROM
-int blitzMode = 1;             // microchess status variable. 1 speeds up chess moves (and dumbs down play)
+uint8_t eepromProtect = 1; // default is to write-protect EEPROM
+int blitzMode = 1;         // microchess status variable. 1 speeds up chess moves (and dumbs down play)
 uint8_t useKeyboardLed = 0x01; // set to 0 to use Serial port, to 1 to use onboard keyboard/LED display.
 
 char threeHex[3][2]; // LED display
@@ -202,76 +203,76 @@ uint8_t parseChar(uint8_t n) //  parse keycode to return its ASCII code
     { //KIM Uno keyscan codes to ASCII codes used by emulator
     case 7:
         c = VKEY_0;
-        break;
+        break; //        note: these are n-1 numbers!
     case 6:
         c = VKEY_1;
-        break;
+        break; //
     case 5:
         c = VKEY_2;
-        break;
+        break; //
     case 4:
         c = VKEY_3;
-        break;
+        break; //
     case 3:
         c = VKEY_4;
-        break;
+        break; //
     case 2:
         c = VKEY_5;
-        break;
+        break; //
     case 1:
         c = VKEY_6;
-        break;
+        break; //
     case 0:
         c = VKEY_ST;
-        break;
+        break; // ST
     case 15:
         c = VKEY_7;
-        break;
+        break; //
     case 14:
         c = VKEY_8;
-        break;
+        break; //
     case 13:
         c = VKEY_9;
-        break;
+        break; //
     case 12:
         c = VKEY_A;
-        break;
+        break; //
     case 11:
         c = VKEY_B;
-        break;
+        break; //
     case 10:
         c = VKEY_C;
-        break;
+        break; //
     case 9:
         c = VKEY_D;
-        break;
+        break; //
     case 8:
         c = VKEY_RS;
-        break;
+        break; // RS
     case 23:
         c = VKEY_E;
-        break;
+        break; //
     case 22:
         c = VKEY_F;
-        break;
+        break; //
     case 21:
         c = VKEY_AD;
-        break;
+        break; // AD
     case 20:
         c = VKEY_DA;
-        break;
+        break; // DA
     case 19:
         c = VKEY_PLUS;
-        break;
+        break; // +
     case 18:
         c = VKEY_GO;
-        break;
+        break; // GO
     case 17:
         c = VKEY_PC;
-        break;
+        break; // PC
     case 16:
         c = (SSTmode == 0 ? VKEY_SST_ON : VKEY_SST_OFF);
-        break;
+        break; // 	SST toggle
     }
 
     return c;
@@ -283,7 +284,6 @@ void scanKeys()
     static int keyCode = -1, prevKey = 0;
     static unsigned long timeFirstPressed = 0;
 
-#ifdef BOARD_WIRED_LED
     // 0. disable driving the 7segment LEDs -----------------
     for (led = 0; led < 8; led++)
     {
@@ -292,7 +292,7 @@ void scanKeys()
         // from driving either high or low.
         digitalWrite(ledSelect[led], HIGH); // Use builtin pullup resistors
     }
-#endif
+
 
     // 1. initialise: set columns to input with pullups
     for (col = 0; col < 8; col++)

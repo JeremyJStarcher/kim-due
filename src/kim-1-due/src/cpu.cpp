@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #ifdef TARGETWEB
-#include "fake-progmem.h"
+#include "fake-progmen.h"
 #include <emscripten/emscripten.h>
 #else
 #include <avr/pgmspace.h>
@@ -28,8 +28,8 @@
 #include "roms/astroid.h"
 #include "roms/uchess7.h"
 #include "cpu.h"
-#include "host-hardware.h"
-#include "host-leds.h"
+#include "boardhardware.h"
+#include "builtin_display.h"
 #include "serial_display.h"
 #include "kim-hardware.h"
 
@@ -357,6 +357,10 @@ uint8_t read6502(uint16_t address)
                 threeHex[2][1] = read6502(0x00F9) & 0xF;
             }
             serial_scands();
+            // driveLEDs();
+
+            //pc = 0x1F45;   // skip subroutine part that deals with LEDs
+            //return (0xEA); // and return a fake NOP instruction for this first read in the subroutine, it'll now go to AK
         }
 
 #ifdef EMULATE_KEYBOARD
@@ -422,6 +426,55 @@ uint8_t read6502(uint16_t address)
         return romuchess7->read(address);
     }
 
+    // I/O functions just for Microchess: ---------------------------------------------------
+    // $F003: 0 = no key pressed, 1 key pressed
+    // $F004: input from user
+    // (also, in write6502: $F001: output character to display)
+    if (address == 0xCFF4)
+    { //simulated keyboard input
+        tempval = getAkey();
+        clearkey();
+        // translate KIM-1 button codes into ASCII code expected by this version of Microchess
+        switch (tempval)
+        {
+        case 16:
+            tempval = 'P';
+            break; // PC translated to P
+        case 'F':
+            tempval = 13;
+            break; // F translated to Return
+        case '+':
+            tempval = 'W';
+            break; // + translated to W meaning Blitz mode toggle
+        }
+        if (tempval == 0x57)
+        { // 'W'. If user presses 'W', he wants to enable Blitz mode.
+            if (blitzMode == 1)
+                (blitzMode = 0);
+            else
+                (blitzMode = 1);
+            serout('>');
+            serout((blitzMode == 1) ? 'B' : 'N');
+            serout('<');
+        }
+        clear_display();
+        return (tempval);
+    }
+    if (address == 0xCFF3)
+    {
+        // simulated keyboard input 0=no key press, 1 = key press light LEDs
+
+        threeHex[0][0] = (read6502(0x00FB) & 0xF0) >> 4;
+        threeHex[0][1] = read6502(0x00FB) & 0xF;
+        threeHex[1][0] = (read6502(0x00FA) & 0xF0) >> 4;
+        threeHex[1][1] = read6502(0x00FA) & 0xF;
+        threeHex[2][0] = (read6502(0x00F9) & 0xF0) >> 4;
+        threeHex[2][1] = read6502(0x00F9) & 0xF;
+        driveLEDs();
+
+        return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
+    }
+
     if (address >= 0xFFFA)
     {
         // 6502 reset and interrupt vectors. Reroute to top of ROM002.
@@ -436,6 +489,7 @@ void write6502(uint16_t address, uint8_t value)
     if (ramMain->inRange(address))
     {
         ramMain->write(address, value);
+        return;
     }
 
 #ifdef USE_EPROM
@@ -445,6 +499,19 @@ void write6502(uint16_t address, uint8_t value)
         return;
     }
 #endif
+
+    if (address < 0x1700)
+    { // illegal access
+        //serout('%');
+        //serout('1'); // error code 1 - write in empty space
+        //return;
+    }
+    if (address < 0x1740)
+    { // I/O 003
+        //serout('%');
+        //serout('3'); // trap code 3 - io3 access
+        //return;
+    }
 
     if (riotIo002->inRange(address))
     {
@@ -576,17 +643,18 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
 {
     uint16_t i;
 
+    /*
     // the first program from First Book of KIM...
-
     uint8_t fbkDemo[9] = {
         0xA5, 0x10, 0xA6, 0x11, 0x85, 0x11, 0x86, 0x10, 0x00};
     write6502(0x0010, 0x10);
     write6502(0x0011, 0x11);
+    // */
 
     //uint8_t fbkDemo[13] = {
     //    0xa9, 0xff, 0x8d, 0x40, 0x17, 0xa9, 0x09, 0x8d, 0x42, 0x17, 0x4c, 0x0a, 0x02};
 
-    // #define fbkDemo astroid
+#define fbkDemo astroid
     size_t l = sizeof fbkDemo / sizeof fbkDemo[0];
 
     for (i = 0; i < l; i++)

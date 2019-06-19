@@ -15,5 +15,10 @@ uint8_t MemIoBase::read(uint16_t address)
 
 bool MemIoBase::inRange(uint16_t x)
 {
-    return ((x >= this->start_range) && (x <= this->end_range));
+    // This version is known NOT to work with negative numbers.
+    // I'm OK with that.
+    return ((x - this->start_range) <= (this->end_range - this->start_range));
+
+    // Version for negative numbers
+    // return ((x-high)*(x-low) <= 0);
 }

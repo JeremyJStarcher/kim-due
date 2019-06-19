@@ -48,14 +48,7 @@ function runloop() {
 	const ANTIFLICKER_DELAY = 2000;
 
 	const NUMBER_OF_INSTRUCTIONS = 1000;
-	try {
-		_webloop(NUMBER_OF_INSTRUCTIONS);
-		setTimeout(runloop, 1);
-	} catch (e) {
-		const add = _lastAddress();
-		console.log("ERROR: " + add, e);
-	}
-
+	_webloop(NUMBER_OF_INSTRUCTIONS);
 	cpuInstructionCount += NUMBER_OF_INSTRUCTIONS;
 
 	for (let i = 0; i < ledTimer.length; i++) {
@@ -68,6 +61,7 @@ function runloop() {
 		}
 	}
 
+	setTimeout(runloop, 1);
 }
 
 function wireupKeyboard() {
