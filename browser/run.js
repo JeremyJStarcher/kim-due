@@ -85,3 +85,49 @@ function onRuntimeInitialized() {
 	wireupKeyboard();
 	runloop();
 }
+
+const serialPrint = (() => {
+	// Since the KIM-1 was designed to hook up to a teletype, a simple
+	// "glass tty" is all we need. No real cursor handling is needed.
+
+	const charsToSkip = [
+		10 // Linefeed character we just ignore entirely
+	];
+
+	const rows = 25;
+	const colums = 80;
+
+	// Make sure our terminal display is at least this big.
+	const spacer = new Array(colums).fill(" ").join("");
+	const cursor = `<span class='cursor'>${String.fromCharCode(9608)}</span>`;
+
+	const lines = [];
+	lines[0] = "";
+
+	return (codePoint) => {
+		const ch = String.fromCodePoint(codePoint);
+
+		if (charsToSkip.indexOf(codePoint) !== -1) {
+			return;
+		}
+
+		const l = lines[lines.length - 1];
+		const l_no_cursor = l.replace(cursor, "");
+
+		if (codePoint == 13) {
+			// Carriage return? Start a new line
+			lines[lines.length - 1] = l_no_cursor;
+			lines.push(cursor);
+		} else {
+			lines[lines.length - 1] = l_no_cursor + ch + cursor;
+		}
+
+		while (lines.length > rows) {
+			lines.shift();
+		}
+
+		lines[0] = spacer;
+
+		document.querySelector("#serial").innerHTML = lines.join("\r");
+	};
+})();
