@@ -293,9 +293,9 @@ uint8_t read6502(uint16_t address)
         return riotIo002->read(address);
     }
 
-    if (address < 0x17C0)
-    { // 0x1780-0x17C0 is RAM from RIOT 003
-        return (RAM003[address - 0x1780]);
+    if (ramRiot003->inRange(address))
+    {
+        return ramRiot003->read(address);
     }
 
     if (address < 0x1800)
@@ -499,11 +499,11 @@ void write6502(uint16_t address, uint8_t value)
         riotIo002->write(address, value);
     }
 
-    if (address < 0x17C0)
-    { // RAM 003
-        RAM003[address - 0x1780] = value;
-        return;
+    if (ramRiot003->inRange(address))
+    {
+        ramRiot003->write(address, value);
     }
+
     if (address < 0x1800)
     { // RAM002
         RAM002[address - 0x17C0] = value;
@@ -576,6 +576,8 @@ void initKIM()
     romuchess7->install(0xC000, 0xC000 + (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
 
     ramMain->install(0x0000, ONBOARD_RAM, RAM);
+    ramRiot003->install(0x1780, 0x17BF, RAM003);
+    ramRiot002->install(0x17C0, 0x17FF, RAM003);
 
     uint16_t i;
 
