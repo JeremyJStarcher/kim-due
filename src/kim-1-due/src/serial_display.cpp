@@ -1,4 +1,4 @@
-#include "kim-hardware.h"
+#include "host-hardware.h"
 #include "cpu.h"
 
 uint8_t kim_hardware_i; // static for speed

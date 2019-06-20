@@ -22,5 +22,9 @@ void MemIoRam::install(
     this->start_range = start_range;
     this->end_range = end_range;
 
+    size_t len = end_range - start_range;
+
+    // printf("ram install: %04x:%04x 0x(%04x) %ld\n", start_range, end_range, len, len);
+
     this->data = data;
 }

@@ -1,7 +1,8 @@
 #include <Arduino.h>
 
 #include "cpu.h"
-#include "kim-hardware.h"
+#include "host-hardware.h"
+#include "host-arduino.h"
 #include "led_driver.h"
 #include "serial_display.h"
 

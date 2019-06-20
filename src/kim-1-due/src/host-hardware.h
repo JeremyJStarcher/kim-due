@@ -1,5 +1,22 @@
-#ifndef KEYPAD_H
-#define KEYPAD_H
+#ifndef HOST_HARDWARE_H
+#define HOST_HARDWARE_H
+
+#ifndef TARGETWEB
+#include <Arduino.h>
+#endif
+
+#include <stdint.h>
+
+void interpretkeys(void);
+uint8_t xkeyPressed(void);
+void scanKeys(void);
+void clearkey(void);
+uint8_t getKIMkey();           // for emulation of KIM keypad
+
+extern uint8_t useKeyboardLed;
+extern uint8_t curkey;
+extern char threeHex[3][2];
+extern uint8_t eepromProtect;
 
 // Virtual keyboard codes.
 // These map to the ASCII value of the given key, as would be
@@ -38,4 +55,3 @@
 #define VKEY_TOGGLE_SERIAL_MODE 9
 #define VKEY_TOGGLE_EPROM_WRITE '>'
 #endif
-

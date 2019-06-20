@@ -13,7 +13,7 @@ SOURCE="src/c/serial_display.cpp"
 SOURCE="${SOURCE} ${CSRC}/webmain.cpp"
 SOURCE="${SOURCE} ${CSRC}/cpu.cpp"
 SOURCE="${SOURCE} ${CSRC}/led_driver.cpp"
-SOURCE="${SOURCE} ${CSRC}/kim-hardware.cpp"
+SOURCE="${SOURCE} ${CSRC}/host-hardware.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIoBase.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIo.cpp"
 SOURCE="${SOURCE} ${CSRC}/MemIo/MemIoRom.cpp"
@@ -26,7 +26,7 @@ echo "CSRC: ${CSRC}"
 LEVEL="-O0 -g4"
 #LEVEL="-O3"
 
-emcc ${SOURCE} --emrun -s EXPORTED_FUNCTIONS='["_websetup", "_webloop", "_injectkey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 ${LEVEL} -D TARGETWEB -o ${DIST}/index.js
+emcc ${SOURCE} --emrun -s EXPORTED_FUNCTIONS='["_debuggetaddress", "_websetup", "_webloop", "_injectkey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 ${LEVEL} -D TARGETWEB -o ${DIST}/index.js
 
 cp index.html ${DIST}
 cp *.css ${DIST}

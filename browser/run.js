@@ -62,7 +62,14 @@ function runloop() {
 	const ANTIFLICKER_DELAY = 2000;
 
 	const NUMBER_OF_INSTRUCTIONS = 1000;
+	try {
 	_webloop(NUMBER_OF_INSTRUCTIONS);
+	} catch (err) {
+		const add = _debuggetaddress();
+		console.log("Error: Last read address: " + add.toString(16));
+		throw err;
+	}
+
 	cpuInstructionCount += NUMBER_OF_INSTRUCTIONS;
 
 	for (let i = 0; i < ledTimer.length; i++) {

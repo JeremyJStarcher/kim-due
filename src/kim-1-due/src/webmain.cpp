@@ -2,7 +2,7 @@
 
 #include "cpu.h"
 #include "led_driver.h"
-#include "kim-hardware.h"
+#include "host-hardware.h"
 #include <emscripten/emscripten.h>
 
 extern "C"

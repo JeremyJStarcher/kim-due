@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Riot002.h"
-#include "../kim-hardware.h"
-
+#include "../host-hardware.h"
 #include "../boardhardware.h"
 #include "../led_driver.h"
 #include "../serial_display.h"

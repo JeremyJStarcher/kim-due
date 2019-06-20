@@ -2,7 +2,7 @@
 
 #include "led_driver.h"
 #include "cpu.h"
-#include "kim-hardware.h"
+#include "host-hardware.h"
 #include "boardhardware.h"
 
 #if BOARD_LED_MAX7219

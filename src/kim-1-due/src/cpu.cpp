@@ -30,7 +30,7 @@
 #include "boardhardware.h"
 #include "led_driver.h"
 #include "serial_display.h"
-#include "kim-hardware.h"
+#include "host-hardware.h"
 
 // Option 1:
 //   Emulate all of the keyboard handling by hijacking the keyboard ROM
@@ -50,6 +50,8 @@ MemIoRam *ramMain = new MemIoRam();
 MemIoRam *ramRiot002 = new MemIoRam();
 MemIoRam *ramRiot003 = new MemIoRam();
 
+static uint16_t last_read_address;
+
 void write6502(uint16_t address, uint8_t value);
 uint8_t read6502(uint16_t address);
 
@@ -63,13 +65,7 @@ void getBin(int num, char *str)
     }
 }
 
-#ifdef USE_EPROM
-extern uint8_t eepromread(uint16_t eepromaddress);
-extern void eepromwrite(uint16_t eepromaddress, uint8_t bytevalue);
-#endif
-
 extern char threeHex[3][2]; // buffer for 3 hex digits
-extern int blitzMode;       // status variable only for microchess
 
 extern uint8_t getAkey(void); // for serial port get normal ASCII keys
 
@@ -274,6 +270,8 @@ const uint8_t disasm[505] PROGMEM = {
 
 uint8_t read6502(uint16_t address)
 {
+    last_read_address = address;
+
     uint8_t tempval = 0;
 
     if (ramMain->inRange(address))
@@ -298,12 +296,12 @@ uint8_t read6502(uint16_t address)
         return ramRiot003->read(address);
     }
 
-    if (address < 0x1800)
-    { // 0x17C0-0x1800 is RAM from RIOT 002
-        return (RAM002[address - 0x17C0]);
+    if (ramRiot002->inRange(address))
+    {
+        return ramRiot002->read(address);
     }
 
-    if (address < 0x2000)
+    if (address < 0x2000 && address >= 0x1C00)
     { // 0x1C00-0x2000 is ROM 002. It needs some intercepting from emulator...
         if (address == 0x1EA0)
         {                  // intercept OUTCH (send char to serial)
@@ -397,7 +395,7 @@ uint8_t read6502(uint16_t address)
         return rom2->read(address);
     }
 
-    if (address < 0x21F9)
+    if (address < 0x21F9 && address >= 0x2000)
     { // 0x2000-0x21F8 is disasm
         return (pgm_read_byte_near(disasm + address - 0x2000));
     }
@@ -405,55 +403,6 @@ uint8_t read6502(uint16_t address)
     if (romuchess7->inRange(address))
     {
         return romuchess7->read(address);
-    }
-
-    // I/O functions just for Microchess: ---------------------------------------------------
-    // $F003: 0 = no key pressed, 1 key pressed
-    // $F004: input from user
-    // (also, in write6502: $F001: output character to display)
-    if (address == 0xCFF4)
-    { //simulated keyboard input
-        tempval = getAkey();
-        clearkey();
-        // translate KIM-1 button codes into ASCII code expected by this version of Microchess
-        switch (tempval)
-        {
-        case 16:
-            tempval = 'P';
-            break; // PC translated to P
-        case 'F':
-            tempval = 13;
-            break; // F translated to Return
-        case '+':
-            tempval = 'W';
-            break; // + translated to W meaning Blitz mode toggle
-        }
-        if (tempval == 0x57)
-        { // 'W'. If user presses 'W', he wants to enable Blitz mode.
-            if (blitzMode == 1)
-                (blitzMode = 0);
-            else
-                (blitzMode = 1);
-            serout('>');
-            serout((blitzMode == 1) ? 'B' : 'N');
-            serout('<');
-        }
-        clear_display();
-        return (tempval);
-    }
-    if (address == 0xCFF3)
-    {
-        // simulated keyboard input 0=no key press, 1 = key press light LEDs
-
-        threeHex[0][0] = (read6502(0x00FB) & 0xF0) >> 4;
-        threeHex[0][1] = read6502(0x00FB) & 0xF;
-        threeHex[1][0] = (read6502(0x00FA) & 0xF0) >> 4;
-        threeHex[1][1] = read6502(0x00FA) & 0xF;
-        threeHex[2][0] = (read6502(0x00F9) & 0xF0) >> 4;
-        threeHex[2][1] = read6502(0x00F9) & 0xF;
-        driveLEDs();
-
-        return (getAkey() == 0 ? (uint8_t)0 : (uint8_t)1);
     }
 
     if (address >= 0xFFFA)
@@ -504,18 +453,9 @@ void write6502(uint16_t address, uint8_t value)
         ramRiot003->write(address, value);
     }
 
-    if (address < 0x1800)
-    { // RAM002
-        RAM002[address - 0x17C0] = value;
-        return;
-    }
-
-    if ((address >= 0x5000) && (address <= 0x6FDF))
-    { // illegal write in fltpt65 ROM
-        //	  printf("WARNING: WRITE TO ROM\n");
-        serout('%');
-        serout('a');
-        return;
+    if (ramRiot002->inRange(address))
+    {
+        ramRiot002->write(address, value);
     }
 
     // Character out function for microchess only: write to display at $F001
@@ -524,8 +464,6 @@ void write6502(uint16_t address, uint8_t value)
         serout(value);
         return;
     }
-    serout('%');
-    serout('4'); // error code 4 - write to ROM
 }
 
 //a few general functions used by various other functions
@@ -556,11 +494,7 @@ uint8_t pull8()
 
 void reset6502()
 {
-    //printf ("test at reset: %x %x\n",0xFFFC, 0xFFFD);
-
     pc = (uint16_t)read6502(0xFFFC) | ((uint16_t)read6502(0xFFFD) << 8);
-    //pc = 0x1C22;
-    //	printf ("pc: %x\n",pc);
     a = 0;
     x = 0;
     y = 0;
@@ -581,10 +515,10 @@ void initKIM()
 
     uint16_t i;
 
-    RAM002[(0x17FA) - (0x17C0)] = 0x00;
-    RAM002[(0x17FB) - (0x17C0)] = 0x1C;
-    RAM002[(0x17FE) - (0x17C0)] = 0x00;
-    RAM002[(0x17FF) - (0x17C0)] = 0x1C;
+    write6502(0x17FA, 0x00);
+    write6502(0x17FB, 0x1C);
+    write6502(0x17FE, 0x00);
+    write6502(0x17FF, 0x1C);
 
     // the code below copies movit (a copy routine) to 0x1780 in RAM. It can be
     // overwritten by users - it's an extra note that the HTML version of the
@@ -2112,4 +2046,12 @@ uint16_t getpc()
 uint8_t getop()
 {
     return (opcode);
+}
+
+extern "C"
+{
+    uint16_t debuggetaddress()
+    {
+        return last_read_address;
+    }
 }
