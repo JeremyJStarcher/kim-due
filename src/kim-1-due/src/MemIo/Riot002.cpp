@@ -91,6 +91,26 @@ MemIoRiot002::MemIoRiot002()
     this->ioPBDD = 0;
 }
 
+/***************************************************
+ * Real KIM-1 Keyboard scan codes.  This are the scans
+ * that we are emulating.
+ *
+ * Note! This differs from the Kim-UNO keyboard which
+ * has an entirely different scan pattern.
+ *
+    ioPAD          (opPDB .....XX.)
+     bit         00    01    10    11        ioPAD
+  assignment    row0  row1  row2  row3       value
+  -----------   ----- ----  ----  ----    ---------
+      bit6        0    7     E            1011 1111
+      bit5        1    8     F            1101 1111
+      bit4        2    9     AD           1110 1111
+      bit3        3    A     DA           1111 0111
+      bit2        4    B     +            1111 1011
+      bit1        5    C     GO           1111 1101
+      bit0        6    D     PC   SST     1111 1110
+ */
+
 uint8_t MemIoRiot002::read(uint16_t address)
 {
     if (address == 0x1747)
@@ -136,7 +156,7 @@ uint8_t MemIoRiot002::read(uint16_t address)
     {
         key_value = getKIMkey();
         last_key_value = key_value;
-        if (key_value != 255)
+        if (key_value != 0xFF)
         {
             holding_key_down = true;
             ctr = HOLDBUTTON_DELAY;
@@ -148,7 +168,6 @@ uint8_t MemIoRiot002::read(uint16_t address)
     case ioSAD:
         switch (ioPBD & 0x07)
         {
-            /* See the keyboard.cpp for details */
         case 1:
             ret = ~(0x40 >> key_value);
             break;
