@@ -2,7 +2,7 @@
 
 #include "cpu.h"
 #include "kim-hardware.h"
-#include "builtin_display.h"
+#include "led_driver.h"
 #include "serial_display.h"
 
 void setup()

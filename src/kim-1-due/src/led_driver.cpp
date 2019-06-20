@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include "builtin_display.h"
+#include "led_driver.h"
 #include "cpu.h"
 #include "kim-hardware.h"
 #include "boardhardware.h"
@@ -45,7 +45,7 @@ uint8_t dig[19] = {
 };
 
 #ifdef TARGETWEB
-#include "../../../browser/src/c/builtin_display.cpp"
+#include "../../../browser/src/c/led_driver.cpp"
 #endif
 
 #if BOARD_LED_MAX7219

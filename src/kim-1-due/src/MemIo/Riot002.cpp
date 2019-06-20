@@ -4,7 +4,7 @@
 #include "../kim-hardware.h"
 
 #include "../boardhardware.h"
-#include "../builtin_display.h"
+#include "../led_driver.h"
 #include "../serial_display.h"
 
 #define ioSAD 0x1740 // 6530 A Data

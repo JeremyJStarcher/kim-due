@@ -1,5 +1,7 @@
-#ifndef BUILTIN_DISPLAY_H
-#define BUILTIN_DISPLAY_H
+#ifndef LED_DRIVER_H
+#define LED_DRIVER_H
+
+#include <stdint.h>
 
 void init_display(void);
 void clear_display(void);
