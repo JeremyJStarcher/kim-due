@@ -24,7 +24,6 @@
 
 #include "roms/cassette.h"
 #include "roms/monitor.h"
-#include "roms/calcrom.h"
 #include "roms/astroid.h"
 #include "roms/uchess7.h"
 #include "cpu.h"
@@ -401,24 +400,6 @@ uint8_t read6502(uint16_t address)
     if (address < 0x21F9)
     { // 0x2000-0x21F8 is disasm
         return (pgm_read_byte_near(disasm + address - 0x2000));
-    }
-
-    if (address == 0x6666)
-    {
-        uint16_t p1 = 0x5000;
-        uint16_t p2 = (sizeof calcRom / sizeof calcRom[0]) + p1;
-
-        uint16_t offset = *calcRom + address - 0x5000;
-
-        // printf("%04x %04x %04x %04x\n", offset, address, p1, p2);
-    }
-
-    if ((address >= 0x5000) && (address <= (sizeof calcRom / sizeof calcRom[0]) + 0x5000))
-    {
-        // 0x6FDF, plus 4 bytes for JSR manually added -
-        // Read to floating point library between $5000 and $6157
-
-        return (pgm_read_byte_near(calcRom + address - 0x5000));
     }
 
     if (romuchess7->inRange(address))
