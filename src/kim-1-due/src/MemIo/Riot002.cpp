@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Riot002.h"
+
 #include "../host-hardware.h"
 #include "../boardhardware.h"
 #include "../led_driver.h"
@@ -112,12 +113,6 @@ MemIoRiot002::MemIoRiot002()
 
 uint8_t MemIoRiot002::read(uint16_t address)
 {
-    if (address == 0x1747)
-    {
-        // CLKRDI  =$1747,READ TIME OUT BIT,count is always complete...
-        return (0xFF);
-    }
-
 #ifdef EMULATE_KEYBOARD
     if (address == 0x1740)
     {
@@ -198,10 +193,6 @@ uint8_t MemIoRiot002::read(uint16_t address)
 
     case aIoPBDD:
         ret = ioPBDD;
-        break;
-
-    case 0x1706:
-        //  ret = ~((UInt8)hwCycles);
         break;
 
     default:

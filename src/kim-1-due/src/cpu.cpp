@@ -5,6 +5,7 @@
    http://obsolescenceguaranteed.blogspot.ch/
    Tidied up by Mark VandeWettering to make it compile with platformio.
 */
+#define USE_TIMING
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@
 #include "MemIo/MemIoRam.h"
 #include "MemIo/MemIoRom.h"
 #include "MemIo/Riot002.h"
+#include "MemIo/RiotTimer.h"
 
 #include "roms/cassette.h"
 #include "roms/monitor.h"
@@ -49,6 +51,7 @@ MemIoRiot002 *riotIo002 = new MemIoRiot002();
 MemIoRam *ramMain = new MemIoRam();
 MemIoRam *ramRiot002 = new MemIoRam();
 MemIoRam *ramRiot003 = new MemIoRam();
+MemRiotTimer *timer003 = new MemRiotTimer();
 
 static uint16_t last_read_address;
 
@@ -286,6 +289,11 @@ uint8_t read6502(uint16_t address)
     }                                          // 0x0800-0x1700 is empty space, should not be read
 #endif
 
+    if (timer003->inRange(address))
+    {
+        return timer003->read(address);
+    }
+
     if (riotIo002->inRange(address))
     {
         return riotIo002->read(address);
@@ -430,17 +438,9 @@ void write6502(uint16_t address, uint8_t value)
     }
 #endif
 
-    if (address < 0x1700)
-    { // illegal access
-        //serout('%');
-        //serout('1'); // error code 1 - write in empty space
-        //return;
-    }
-    if (address < 0x1740)
-    { // I/O 003
-        //serout('%');
-        //serout('3'); // trap code 3 - io3 access
-        //return;
+    if (timer003->inRange(address))
+    {
+        timer003->write(address, value);
     }
 
     if (riotIo002->inRange(address))
@@ -508,6 +508,8 @@ void initKIM()
     rom1->install(0x1800, 0x1BFF, cassette);
     rom2->install(0x1C00, 0x1FFF, monitor);
     romuchess7->install(0xC000, 0xC000 + (sizeof(uchess7) / sizeof(uchess7[0])), uchess7);
+
+    timer003->install(0x1704, 0x170F, 0x1700);
 
     ramMain->install(0x0000, ONBOARD_RAM, RAM);
     ramRiot003->install(0x1780, 0x17BF, RAM003);
@@ -578,44 +580,6 @@ void loadTestProgram() // Call this from main() if you want a program preloaded.
     {
         write6502(i + 0x0200, fbkDemo[i]);
     }
-
-    // load fltpt65 demo program
-    uint8_t fltptDemo[31] = {
-        0x20, 0xA1, 0x70, 0x20, 0xA2, 0x70, 0xA9, 0x02, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70,
-        0x20, 0xAA, 0x70,
-        0xF0, 0x08,
-        0x20, 0x31, 0x70, 0xA9, 0x04, 0x20, 0x00, 0x50, 0x20, 0xD3, 0x70, 0x00};
-    for (i = 0x0; i < 31; i++)
-    {
-        // NOCOPY RAM[i + 0x0210] = fltptDemo[i];
-    }
-
-    /* org=$0210
-    JSR $6FF1
-    JSR $6FF2
-
-    LDA #$02
-    JSR $5000
-    JSR $6FE3
-    JSR $6FC1
-    LDA #$04
-
-    JSR $5000
-
-    JSR $6FE3
-    BRK    */
-
-    /*	uint8_t helloworld[0x28] = { // test program for Serial, prints hello world
-    		0xAE, 0x13, 0x02, 0xCA, 0x8E, 0x13, 0x02, 0xBD,
-    		0x14, 0x02, 0x20, 0xA0, 0x1E, 0xEC, 0x00, 0x00,
-    		0xD0, 0xEE, 0x00, 0x13, 0x0D, 0x0A, 0x0D, 0x0A,
-    		0x64, 0x6C,
-    		0x72, 0x6F, 0x77, 0x20, 0x2C, 0x6F, 0x6C, 0x6C, 0x65, 0x48,
-    		0x0D, 0x0A, 0x0D, 0x0A };
-
-    	for (int iii=0x0200; iii<0x0224;iii++)
-    		RAM[iii]=helloworld[iii-0x0200];
-    */
 }
 
 //addressing mode functions, calculates effective addresses
@@ -1395,6 +1359,9 @@ prog_char ticktable[256] PROGMEM = {
 
 void exec6502(int32_t tickcount)
 {
+    uint16_t saveticks = clockticks6502;
+    // jjz timer003->timer -= tickcount;
+
 #ifdef USE_TIMING
     clockgoal6502 += tickcount;
 
@@ -2022,9 +1989,13 @@ void exec6502(int32_t tickcount)
             inc();
             break;
         }
+    
+    timer003->timer -= clockticks6502 - saveticks;
 
 #ifdef USE_TIMING
         clockgoal6502 -= (int32_t)pgm_read_byte_near(ticktable + opcode);
+#else
+        timer003->timer -= 1;
 #endif
         instructions++;
 
