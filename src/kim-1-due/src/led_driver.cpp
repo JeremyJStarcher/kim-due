@@ -115,7 +115,7 @@ void driveLED(uint8_t led, uint8_t n)
     }
 
     size_t real_led = t_8_6[led];
-    display.sendRawByte(real_led, xlate_led_pattern[n]);
+    display.sendRawByte(real_led, xlate_led_pattern[n & 0b01111111]);
 }
 
 void clear_display()
@@ -207,7 +207,6 @@ void convert_led_pattern(void)
         }
 
         result >>= 1;
-        xlate_led_pattern[i] = result;
+        xlate_led_pattern[i & 0b01111111] = result;
     }
 }
-
