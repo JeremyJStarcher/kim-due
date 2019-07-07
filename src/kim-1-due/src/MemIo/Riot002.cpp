@@ -7,9 +7,9 @@
 #include "../led_driver.h"
 #include "../serial_display.h"
 
-#define ioSAD 0x1740 // 6530 A Data
+#define ioSAD 0x1740   // 6530 A Data
 #define aIoPADD 0x1741 // 6530 A Data Direction
-#define ioSBD 0x1742 // 6530 B Data
+#define ioSBD 0x1742   // 6530 B Data
 #define aIoPBDD 0x1743 // 6530 B Data Direction
 
 // #define EMULATE_KEYBOARD
