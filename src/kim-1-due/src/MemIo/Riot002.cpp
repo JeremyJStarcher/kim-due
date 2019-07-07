@@ -76,7 +76,7 @@ void MemIoRiot002::processIoChange()
     // 020D              .END
 
     code = ioPAD & ioPADD;
-    driveLED(led, code);
+    driveLED(led, code, ioPBD);
 }
 
 MemIoRiot002::MemIoRiot002()

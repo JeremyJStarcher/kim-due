@@ -24,8 +24,9 @@
 #define BOARD_LED_MAX7219 false
 #define BOARD_WIRED_LED false
 #else
-#define BOARD_LED_MAX7219 true
+#define BOARD_LED_MAX7219 false
 #define BOARD_WIRED_LED false
+#define BOARD_LED2 true
 #endif
 
 #if BOARD_LED_MAX7219

@@ -48,6 +48,74 @@ uint8_t dig[19] = {
 #include "../../../browser/src/c/led_driver.cpp"
 #endif
 
+#if BOARD_LED2
+int pins[7] = {50, 51, 49, 47, 45, 43, 41};
+// int spins[6] = {24, 26, 28, 30, 32, 34};
+int spins[6] = {34, 32, 30, 28, 26, 24};
+#define SPIN_COUNT 6
+
+#define LIGHT_PIN HIGH
+#define LIGHT_SEGMENT HIGH
+void reset_spins()
+{
+    for (int j = 0; j < SPIN_COUNT; j++)
+    {
+        int spin = spins[j];
+        pinMode(spin, OUTPUT);
+        digitalWrite(spin, !LIGHT_PIN);
+    }
+}
+
+void init_display()
+{
+    for (int spin_i = 0; spin_i < SPIN_COUNT; spin_i++)
+    {
+        reset_spins();
+        int spin = spins[spin_i];
+
+        pinMode(spin, OUTPUT);
+        digitalWrite(spin, LIGHT_PIN);
+        for (size_t i = 0; i < 7; i++)
+        {
+            int pin = pins[i];
+            pinMode(pin, OUTPUT);
+            digitalWrite(pin, LOW);
+            delay(10);
+            digitalWrite(pin, HIGH);
+        }
+        digitalWrite(spin, !LIGHT_PIN);
+    }
+    reset_spins();
+}
+
+void driveLED(uint8_t led_ignore, uint8_t n, uint8_t raw_led)
+{
+    reset_spins();
+    uint8_t led = ((raw_led - 9) >> 1 & 0b111);
+
+    if (led >= 0 && led <= 6)
+    {
+        int spin = spins[led];
+
+        digitalWrite(spin, LIGHT_PIN);
+    }
+
+    for (int i = 0; i < 7; i++)
+    {
+        int d = 1 << i;
+        int p = pins[i];
+        int d1 = (n & d) ? LOW : HIGH;
+
+        digitalWrite(p, d1);
+    }
+}
+
+void driveLEDs()
+{
+}
+
+#endif
+
 #if BOARD_LED_MAX7219
 
 MAX7219 display(1, LED_CS);
