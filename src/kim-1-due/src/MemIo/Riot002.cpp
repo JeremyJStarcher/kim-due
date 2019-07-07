@@ -49,7 +49,7 @@ void MemIoRiot002::processIoChange()
     *  13                           6
     */
 
-    led = (ioPBD - 9) >> 1;
+    led = ((ioPBD - 9) >> 1) & 0b111;
 
     if (ioPADD == 0x7F && false)
     {
